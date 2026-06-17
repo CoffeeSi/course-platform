@@ -10,14 +10,14 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
+from datetime import timedelta
 from pathlib import Path
 import environ
 
-env = environ.Env()
-environ.Env.read_env()
-
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+env = environ.Env()
+environ.Env.read_env(BASE_DIR / ".env", overwrite=True)
 
 
 # Quick-start development settings - unsuitable for production
@@ -29,7 +29,8 @@ SECRET_KEY = env("DJANGO_SECRET_KEY", default="django-secret-key")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.bool("DJANGO_DEBUG", default=True)
 
-ALLOWED_HOSTS = []
+# ALLOWED_HOSTS = env.str("DJANGO_ALLOWED_HOSTS", default="localhost,127.0.0.1").split(",")
+ALLOWED_HOSTS = ["*"]
 
 
 # Application definition
@@ -42,16 +43,27 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
+    "users",
 ]
+
+AUTH_USER_MODEL = "users.User"
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
+}
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework.authentication.TokenAuthentication",
-        "rest_framework.authentication.SessionAuthentication",
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        # "rest_framework.authentication.SessionAuthentication",
     ],
-    # "DEFAULT_PERMISSION_CLASSES": [
-    #     "rest_framework.permissions.IsAuthenticated",
-    # ],
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
+        "users.permissions.IsEmailVerified",
+    ],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 20,
 }
@@ -68,7 +80,7 @@ MIDDLEWARE = [
 ]
 
 CORS_ALLOWED_ORIGINS = [
-    env.str("FRONTEND_URL", default="http://localhost:3000"),
+    env.str("FRONTEND_URL", default="127.0.0.1"),
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -97,7 +109,7 @@ WSGI_APPLICATION = "config.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "URI" "NAME": env("POSTGRES_DB", default="django"),
+        "NAME": env("POSTGRES_DB", default="django"),
         "USER": env("POSTGRES_USER", default="django"),
         "PASSWORD": env("POSTGRES_PASSWORD", default="django"),
         "HOST": env("POSTGRES_HOST", default="localhost"),
@@ -141,3 +153,25 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = "static/"
+
+
+# Celery
+CELERY_BROKER_URL = env("CELERY_BROKER_URL", default="redis://localhost:6379/0")
+CELERY_RESULT_BACKEND = env("CELERY_RESULT_BACKEND", default="redis://localhost:6379/0")
+CELERY_ACCEPT_CONTENT = env.list("CELERY_ACCEPT_CONTENT", default=["json"])
+CELERY_TASK_SERIALIZER = env("CELERY_TASK_SERIALIZER", default="json")
+
+# Email
+EMAIL_HOST = env("EMAIL_HOST", default="smtp.gmail.com")
+EMAIL_PORT = env.int("EMAIL_PORT", default=587)
+EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
+EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
+EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
+DEFAULT_FROM_EMAIL = env(
+    "DEFAULT_FROM_EMAIL",
+    default=f"Course Platform <{env('EMAIL_HOST_USER', default='noreply@localhost')}>",
+)
+EMAIL_BACKEND = env(
+    "EMAIL_BACKEND",
+    default="django.core.mail.backends.smtp.EmailBackend",
+)
