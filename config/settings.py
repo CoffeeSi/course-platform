@@ -43,7 +43,11 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
+    "drf_spectacular",
+    "corsheaders",
+    "storages",
     "users",
+    "courses",
 ]
 
 AUTH_USER_MODEL = "users.User"
@@ -66,6 +70,7 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 20,
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
 
 MIDDLEWARE = [
@@ -79,8 +84,12 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
+frontend_url = env.str("FRONTEND_URL", default="http://127.0.0.1:3000")
+if not frontend_url.startswith(("http://", "https://")):
+    frontend_url = f"http://{frontend_url}"
+
 CORS_ALLOWED_ORIGINS = [
-    env.str("FRONTEND_URL", default="127.0.0.1"),
+    frontend_url,
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -175,3 +184,34 @@ EMAIL_BACKEND = env(
     "EMAIL_BACKEND",
     default="django.core.mail.backends.smtp.EmailBackend",
 )
+
+USE_MINIO = env.bool("USE_MINIO", default=True)
+
+if USE_MINIO:
+    AWS_ACCESS_KEY_ID = env("MINIO_ROOT_USER", default="minioadmin")
+    AWS_SECRET_ACCESS_KEY = env("MINIO_ROOT_PASSWORD", default="minioadmin")
+    AWS_STORAGE_BUCKET_NAME = env("MINIO_BUCKET_NAME", default="course-videos")
+    AWS_S3_ENDPOINT_URL = env("MINIO_ENDPOINT", default="http://127.0.0.1:9000")
+
+    AWS_S3_USE_SSL = env.bool("MINIO_STORAGE_USE_SSL", default=False)
+    AWS_S3_VERIFY = False
+
+    # Enable temporary signed URLs for private video access
+    AWS_QUERYSTRING_AUTH = env.bool("AWS_QUERYSTRING_AUTH", default=True)
+    AWS_S3_SIGNATURE_VERSION = "s3v4"
+
+    STORAGES = {
+        "default": {
+            "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+        },
+        "staticfiles": {
+            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        },
+    }
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Course Platform API",
+    "DESCRIPTION": "Интерактивная спецификация API для платформы онлайн-курсов.",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+}
