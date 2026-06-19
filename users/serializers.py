@@ -20,6 +20,49 @@ class ProfileSerializer(serializers.ModelSerializer):
         fields = ["first_name", "last_name", "avatar"]
 
 
+class UserProfileSerializer(serializers.ModelSerializer):
+    """
+    Сериализатор текущего профиля пользователя.
+
+    Возвращает данные аккаунта и вложенный профиль, а также позволяет
+    обновлять поля профиля через PATCH/PUT.
+    """
+
+    profile = ProfileSerializer(required=False)
+
+    class Meta:
+        model = User
+        fields = [
+            "id",
+            "email",
+            "phone_number",
+            "role",
+            "is_email_verified",
+            "is_phone_verified",
+            "profile",
+        ]
+        read_only_fields = [
+            "id",
+            "email",
+            "phone_number",
+            "role",
+            "is_email_verified",
+            "is_phone_verified",
+        ]
+
+    def update(self, instance, validated_data):
+        profile_data = validated_data.pop("profile", None)
+
+        if profile_data is not None:
+            profile, _ = Profile.objects.get_or_create(user=instance)
+            for attr, value in profile_data.items():
+                setattr(profile, attr, value)
+            profile.save()
+
+        instance.refresh_from_db()
+        return instance
+
+
 class UserRegisterSerializer(serializers.ModelSerializer):
     """
     Сериализатор для регистрации пользователя.
@@ -124,4 +167,16 @@ class VerificationSerializer(serializers.Serializer):
         required=True,
         max_length=6,
         help_text="6-значный код подтверждения, отправленный на email",
+    )
+
+
+class ResendVerificationSerializer(serializers.Serializer):
+    """
+    Сериализатор для повторной отправки письма подтверждения email.
+
+    Принимает только email пользователя.
+    """
+
+    email = serializers.EmailField(
+        required=True, help_text="Email адрес пользователя для повторной отправки кода"
     )

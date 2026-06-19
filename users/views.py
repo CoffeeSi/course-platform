@@ -1,9 +1,19 @@
-from rest_framework import status, views
+from rest_framework import generics, status, views
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from drf_spectacular.utils import extend_schema, OpenApiExample
-from .models import User, Verification
-from .serializers import UserRegisterSerializer, VerificationSerializer
+
+from users.permissions import IsEmailVerified
+from users.tasks import send_verification_email
+from .models import User, Verification, Profile
+from .serializers import (
+    UserRegisterSerializer,
+    VerificationSerializer,
+    ResendVerificationSerializer,
+    UserProfileSerializer,
+)
+import random
+from django.utils import timezone
 
 
 class RegisterView(views.APIView):
@@ -140,3 +150,95 @@ class VerifyEmailView(views.APIView):
                 )
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@extend_schema(
+    summary="Повторная отправка кода подтверждения email",
+    description="Отправляет новый код подтверждения на email пользователя, если email еще не подтвержден.",
+    request=ResendVerificationSerializer,
+    responses={
+        200: OpenApiExample(
+            "Успешно",
+            value={"message": "Код подтверждения отправлен на email."},
+        ),
+        400: OpenApiExample(
+            "Email уже подтвержден",
+            value={"error": "Email уже подтвержден."},
+        ),
+        404: OpenApiExample(
+            "Пользователь не найден",
+            value={"error": "Пользователь не найден."},
+        ),
+    },
+    tags=["Аутентификация"],
+)
+class ResendVerificationEmailView(views.APIView):
+    """
+    API endpoint для повторной отправки письма с кодом подтверждения email.
+
+    Позволяет пользователю получить новый код, если первый был потерян или не дошел.
+    """
+
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = ResendVerificationSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        email = serializer.validated_data["email"]
+
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            return Response(
+                {"error": "Пользователь не найден."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if user.is_email_verified:
+            return Response(
+                {"error": "Email уже подтвержден."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        Verification.objects.filter(
+            user=user, verification_type="email_token", is_used=False
+        ).update(is_used=True)
+
+        otp_code = str(random.randint(100000, 999999))
+        Verification.objects.create(
+            user=user,
+            verification_type="email_token",
+            code=otp_code,
+            expires_at=timezone.now() + timezone.timedelta(minutes=15),
+        )
+        send_verification_email.delay(user.email, otp_code)
+
+        return Response(
+            {"message": "Код подтверждения отправлен на email."},
+            status=status.HTTP_200_OK,
+        )
+
+
+@extend_schema(
+    summary="Текущий профиль пользователя",
+    description="Получение и обновление профиля авторизованного пользователя.",
+    request=UserProfileSerializer,
+    responses={200: UserProfileSerializer},
+    tags=["Профиль"],
+)
+class CurrentUserProfileView(generics.RetrieveUpdateAPIView):
+    """
+    API endpoint для профиля текущего пользователя.
+
+    Возвращает аккаунт и вложенные данные профиля. При отсутствии записи
+    Profile создает ее автоматически.
+    """
+
+    serializer_class = UserProfileSerializer
+    permission_classes = [IsEmailVerified]
+
+    def get_object(self):
+        Profile.objects.get_or_create(user=self.request.user)
+        return self.request.user

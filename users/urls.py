@@ -1,7 +1,12 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from drf_spectacular.utils import extend_schema, OpenApiExample
-from users.views import RegisterView, VerifyEmailView
+from users.views import (
+    RegisterView,
+    VerifyEmailView,
+    ResendVerificationEmailView,
+    CurrentUserProfileView,
+)
 
 
 # Расширенные JWT views с документацией
@@ -69,6 +74,12 @@ class DocumentedTokenRefreshView(TokenRefreshView):
 urlpatterns = [
     path("register/", RegisterView.as_view(), name="register"),
     path("verify-email/", VerifyEmailView.as_view(), name="verify-email"),
+    path(
+        "resend-email-verification/",
+        ResendVerificationEmailView.as_view(),
+        name="resend-email-verification",
+    ),
+    path("profile/", CurrentUserProfileView.as_view(), name="profile"),
     path("login/", DocumentedTokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("token/refresh/", DocumentedTokenRefreshView.as_view(), name="token_refresh"),
 ]
