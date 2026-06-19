@@ -3,6 +3,7 @@ from unittest.mock import patch
 
 from django.urls import reverse
 from django.utils import timezone
+from rest_framework import status
 from rest_framework.test import APITestCase
 
 from users.models import User, Verification, Profile
@@ -153,3 +154,50 @@ class CurrentUserProfileViewTests(APITestCase):
         self.assertEqual(profile.last_name, "Petrov")
         self.assertEqual(profile.avatar, "https://example.com/avatar.png")
         self.assertEqual(response.data["profile"]["first_name"], "Ivan")
+
+
+class UserEndpointSmokeTests(APITestCase):
+    @patch("users.serializers.random.randint", return_value=123456)
+    @patch("users.serializers.send_verification_email.delay")
+    def test_register_login_refresh_and_schema_endpoints(self, mock_send, _mock_randint):
+        register_response = self.client.post(
+            reverse("register"),
+            {
+                "email": "new-user@example.com",
+                "password": "StrongPass123!",
+                "password_confirm": "StrongPass123!",
+            },
+            format="json",
+        )
+        self.assertEqual(register_response.status_code, status.HTTP_201_CREATED)
+        mock_send.assert_called_once_with("new-user@example.com", "123456")
+
+        user = User.objects.get(email="new-user@example.com")
+        user.is_email_verified = True
+        user.save()
+
+        login_response = self.client.post(
+            reverse("token_obtain_pair"),
+            {"email": "new-user@example.com", "password": "StrongPass123!"},
+            format="json",
+        )
+        self.assertEqual(login_response.status_code, status.HTTP_200_OK)
+        self.assertIn("access", login_response.data)
+        self.assertIn("refresh", login_response.data)
+
+        refresh_response = self.client.post(
+            reverse("token_refresh"),
+            {"refresh": login_response.data["refresh"]},
+            format="json",
+        )
+        self.assertEqual(refresh_response.status_code, status.HTTP_200_OK)
+        self.assertIn("access", refresh_response.data)
+
+        schema_response = self.client.get(reverse("schema"))
+        self.assertEqual(schema_response.status_code, status.HTTP_200_OK)
+
+        swagger_response = self.client.get(reverse("swagger-ui"))
+        self.assertEqual(swagger_response.status_code, status.HTTP_200_OK)
+
+        redoc_response = self.client.get(reverse("redoc"))
+        self.assertEqual(redoc_response.status_code, status.HTTP_200_OK)

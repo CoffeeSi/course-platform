@@ -1,6 +1,12 @@
 from django.urls import path
+from rest_framework import serializers
+from rest_framework_simplejwt.serializers import (
+    TokenObtainPairSerializer,
+    TokenRefreshSerializer,
+)
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-from drf_spectacular.utils import extend_schema, OpenApiExample
+from drf_spectacular.utils import extend_schema, inline_serializer
+
 from users.views import (
     RegisterView,
     VerifyEmailView,
@@ -9,63 +15,44 @@ from users.views import (
 )
 
 
-# Расширенные JWT views с документацией
 @extend_schema(
-    summary="Вход и получение токена доступа",
-    description="Аутентификация пользователя с email и пароля для получения JWT токена доступа.",
-    request={
-        "type": "object",
-        "properties": {
-            "email": {
-                "type": "string",
-                "format": "email",
-                "example": "user@example.com",
-            },
-            "password": {"type": "string", "example": "password123"},
-        },
-    },
+    summary="Login and obtain access token",
+    description="Authenticate by email and password to receive JWT tokens.",
+    request=TokenObtainPairSerializer,
     responses={
-        200: OpenApiExample(
-            "Успешно",
-            value={
-                "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-                "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+        200: inline_serializer(
+            name="TokenObtainPairResponse",
+            fields={
+                "access": serializers.CharField(),
+                "refresh": serializers.CharField(),
             },
         ),
-        401: OpenApiExample(
-            "Неавторизованный доступ",
-            value={
-                "detail": "Не найден активный аккаунт с указанными учетными данными"
-            },
+        401: inline_serializer(
+            name="TokenAuthErrorResponse",
+            fields={"detail": serializers.CharField()},
         ),
     },
-    tags=["Аутентификация"],
+    tags=["Authentication"],
 )
 class DocumentedTokenObtainPairView(TokenObtainPairView):
     pass
 
 
 @extend_schema(
-    summary="Обновление токена доступа",
-    description="Получить новый токен доступа используя валидный токен обновления.",
-    request={
-        "type": "object",
-        "properties": {
-            "refresh": {
-                "type": "string",
-                "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-            }
-        },
-    },
+    summary="Refresh access token",
+    description="Use a valid refresh token to receive a new access token.",
+    request=TokenRefreshSerializer,
     responses={
-        200: OpenApiExample(
-            "Успешно", value={"access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."}
+        200: inline_serializer(
+            name="TokenRefreshResponse",
+            fields={"access": serializers.CharField()},
         ),
-        401: OpenApiExample(
-            "Неверный токен", value={"detail": "Токен неверный или истек"}
+        401: inline_serializer(
+            name="TokenRefreshErrorResponse",
+            fields={"detail": serializers.CharField()},
         ),
     },
-    tags=["Аутентификация"],
+    tags=["Authentication"],
 )
 class DocumentedTokenRefreshView(TokenRefreshView):
     pass

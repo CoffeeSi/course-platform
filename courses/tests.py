@@ -146,6 +146,36 @@ class CourseAPITests(APITestCase):
         self.course.refresh_from_db()
         self.assertEqual(self.course.title, "Updated Python Course")
 
+    def test_category_detail_update_and_delete(self):
+        response = self.client.get(reverse('category-detail', kwargs={'pk': self.category.pk}))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['slug'], "programming")
+
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.patch(
+            reverse('category-detail', kwargs={'pk': self.category.pk}),
+            {"description": "Updated description"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.category.refresh_from_db()
+        self.assertEqual(self.category.description, "Updated description")
+
+        response = self.client.delete(reverse('category-detail', kwargs={'pk': self.category.pk}))
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(Category.objects.filter(pk=self.category.pk).exists())
+
+    def test_course_detail_and_delete(self):
+        response = self.client.get(reverse('course-detail', kwargs={'pk': self.course.pk}))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['title'], "Python Course")
+        self.assertEqual(len(response.data['modules']), 1)
+
+        self.client.force_authenticate(user=self.instructor)
+        response = self.client.delete(reverse('course-detail', kwargs={'pk': self.course.pk}))
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(Course.objects.filter(pk=self.course.pk).exists())
+
     def test_module_creation_and_ownership(self):
         self.client.force_authenticate(user=self.instructor2)
         response = self.client.post(
@@ -162,6 +192,25 @@ class CourseAPITests(APITestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
+    def test_module_detail_update_and_delete(self):
+        response = self.client.get(reverse('module-detail', kwargs={'pk': self.module.pk}))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['title'], "Introduction to Python")
+
+        self.client.force_authenticate(user=self.instructor)
+        response = self.client.patch(
+            reverse('module-detail', kwargs={'pk': self.module.pk}),
+            {"title": "Updated Module"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.module.refresh_from_db()
+        self.assertEqual(self.module.title, "Updated Module")
+
+        response = self.client.delete(reverse('module-detail', kwargs={'pk': self.module.pk}))
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(Module.objects.filter(pk=self.module.pk).exists())
+
     def test_lesson_creation_and_ownership(self):
         self.client.force_authenticate(user=self.instructor2)
         response = self.client.post(
@@ -177,6 +226,25 @@ class CourseAPITests(APITestCase):
             {"module": self.module.id, "title": "Lesson 2: Functions", "order": 2}
         )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_lesson_detail_update_and_delete(self):
+        response = self.client.get(reverse('lesson-detail', kwargs={'pk': self.lesson.pk}))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['title'], "Variables & Data Types")
+
+        self.client.force_authenticate(user=self.instructor)
+        response = self.client.patch(
+            reverse('lesson-detail', kwargs={'pk': self.lesson.pk}),
+            {"title": "Updated Lesson"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.lesson.refresh_from_db()
+        self.assertEqual(self.lesson.title, "Updated Lesson")
+
+        response = self.client.delete(reverse('lesson-detail', kwargs={'pk': self.lesson.pk}))
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(Lesson.objects.filter(pk=self.lesson.pk).exists())
 
     def test_list_restrictions(self):
         self.client.force_authenticate(user=self.student)

@@ -1,7 +1,7 @@
-from rest_framework import generics, status, views
+from rest_framework import generics, serializers, status, views
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
-from drf_spectacular.utils import extend_schema, OpenApiExample
+from drf_spectacular.utils import extend_schema, inline_serializer
 
 from users.permissions import IsEmailVerified
 from users.tasks import send_verification_email
@@ -14,6 +14,20 @@ from .serializers import (
 )
 import random
 from django.utils import timezone
+
+
+MessageResponseSerializer = inline_serializer(
+    name="MessageResponse",
+    fields={"message": serializers.CharField()},
+)
+ErrorResponseSerializer = inline_serializer(
+    name="ErrorResponse",
+    fields={"error": serializers.CharField()},
+)
+ValidationErrorResponseSerializer = inline_serializer(
+    name="ValidationErrorResponse",
+    fields={"errors": serializers.JSONField()},
+)
 
 
 class RegisterView(views.APIView):
@@ -31,19 +45,8 @@ class RegisterView(views.APIView):
         description="Создание нового аккаунта пользователя. 6-значный код подтверждения будет отправлен на указанный email.",
         request=UserRegisterSerializer,
         responses={
-            201: OpenApiExample(
-                "Успешно",
-                value={
-                    "message": "Пользователь успешно зарегистрирован. Код подтверждения отправлен на email."
-                },
-            ),
-            400: OpenApiExample(
-                "Ошибка валидации",
-                value={
-                    "email": ["Email уже зарегистрирован"],
-                    "password": ["Пароль слишком простой"],
-                },
-            ),
+            201: MessageResponseSerializer,
+            400: ValidationErrorResponseSerializer,
         },
         tags=["Аутентификация"],
     )
@@ -87,18 +90,9 @@ class VerifyEmailView(views.APIView):
         description="Подтверждение адреса электронной почты с использованием кода, отправленного при регистрации.",
         request=VerificationSerializer,
         responses={
-            200: OpenApiExample(
-                "Успешно",
-                value={"message": "Email успешно подтвержден!"},
-            ),
-            400: OpenApiExample(
-                "Неверный код",
-                value={"error": "Неверный или просроченный код."},
-            ),
-            404: OpenApiExample(
-                "Пользователь не найден",
-                value={"error": "Пользователь не найден."},
-            ),
+            200: MessageResponseSerializer,
+            400: ErrorResponseSerializer,
+            404: ErrorResponseSerializer,
         },
         tags=["Аутентификация"],
     )
@@ -157,18 +151,9 @@ class VerifyEmailView(views.APIView):
     description="Отправляет новый код подтверждения на email пользователя, если email еще не подтвержден.",
     request=ResendVerificationSerializer,
     responses={
-        200: OpenApiExample(
-            "Успешно",
-            value={"message": "Код подтверждения отправлен на email."},
-        ),
-        400: OpenApiExample(
-            "Email уже подтвержден",
-            value={"error": "Email уже подтвержден."},
-        ),
-        404: OpenApiExample(
-            "Пользователь не найден",
-            value={"error": "Пользователь не найден."},
-        ),
+        200: MessageResponseSerializer,
+        400: ErrorResponseSerializer,
+        404: ErrorResponseSerializer,
     },
     tags=["Аутентификация"],
 )

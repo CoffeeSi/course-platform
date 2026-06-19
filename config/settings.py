@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     "storages",
     "users",
     "courses",
+    "enrollments",
 ]
 
 AUTH_USER_MODEL = "users.User"
