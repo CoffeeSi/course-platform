@@ -1,11 +1,13 @@
 from rest_framework import generics, status, viewsets
-from rest_framework.decorators import action
+from rest_framework.decorators import APIView, action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema, OpenApiExample, OpenApiParameter
-from django.shortcuts import get_object_or_404
+from django.db.models import QuerySet
 from django.utils import timezone
+
+from courses.models import Lesson
 
 from .models import Enrollment, Progress
 from .serializers import (
@@ -13,7 +15,7 @@ from .serializers import (
     EnrollmentCreateSerializer,
     ProgressSerializer,
 )
-from .permissions import IsEnrolled, IsEnrollmentOwner
+from .permissions import IsEnrollmentOwner
 from users.permissions import IsEmailVerified
 
 
@@ -32,9 +34,8 @@ class EnrollmentListCreateView(generics.ListCreateAPIView):
 
     serializer_class = EnrollmentSerializer
     permission_classes = [IsAuthenticated, IsEmailVerified]
-    pagination_class = None
 
-    def get_serializer_class(self):
+    def get_serializer_class(self) -> type:
         """Используем разные сериализаторы для GET и POST."""
         if self.request.method == "POST":
             return EnrollmentCreateSerializer
@@ -43,7 +44,7 @@ class EnrollmentListCreateView(generics.ListCreateAPIView):
     def get_queryset(self):
         """Возвращаем только зачисления текущего пользователя."""
         return Enrollment.objects.filter(student=self.request.user).prefetch_related(
-            "progress"
+            "progresses"
         )
 
     def perform_create(self, serializer):
@@ -59,7 +60,7 @@ class EnrollmentListCreateView(generics.ListCreateAPIView):
                 value={
                     "id": 1,
                     "course": 1,
-                    "progress": [
+                    "progresses": [
                         {
                             "id": 1,
                             "lesson": 1,
@@ -89,8 +90,8 @@ class EnrollmentListCreateView(generics.ListCreateAPIView):
                     "enrollment_id": enrollment.id,
                     "course": enrollment.course.id,
                     "course_title": enrollment.course.title,
-                    "progress": ProgressSerializer(
-                        enrollment.progress.all(), many=True
+                    "progresses": ProgressSerializer(
+                        enrollment.progresses.all(), many=True
                     ).data,
                 }
             )
@@ -114,9 +115,43 @@ class EnrollmentDetailView(generics.RetrieveDestroyAPIView):
     permission_classes = [IsAuthenticated, IsEmailVerified, IsEnrollmentOwner]
     lookup_field = "id"
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[Enrollment]:
         """Return all enrollments so object permissions can produce 403."""
-        return Enrollment.objects.prefetch_related("progress")
+        return Enrollment.objects.prefetch_related("progresses")
+
+
+class CheckCourseStatusView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, course_id: int):
+        user = request.user
+
+        enrollment = Enrollment.objects.filter(
+            student=user, course_id=course_id
+        ).first()
+        is_enrolled = bool(enrollment)
+
+        progress_percent = 0
+        if is_enrolled:
+            total_lessons = Lesson.objects.filter(module__course_id=course_id).count()
+
+            if total_lessons > 0:
+                completed_lessons = Progress.objects.filter(
+                    enrollment=enrollment,
+                    is_completed=True,
+                ).count()
+                progress_percent = int((completed_lessons / total_lessons) * 100)
+            else:
+                progress_percent = 0
+
+        return Response(
+            {
+                "course_id": int(course_id),
+                "is_enrolled": is_enrolled,
+                "progress_percent": progress_percent,
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 @extend_schema(
@@ -133,9 +168,8 @@ class ProgressViewSet(viewsets.ModelViewSet):
     queryset = Progress.objects.none()
     permission_classes = [IsAuthenticated, IsEmailVerified]
     lookup_field = "id"
-    pagination_class = None
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[Progress]:
         """Возвращаем только прогресс для зачислений текущего пользователя."""
         return Progress.objects.filter(
             enrollment__student=self.request.user

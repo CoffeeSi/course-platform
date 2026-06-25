@@ -6,6 +6,8 @@ from django.contrib.auth.models import (
 from django.db import models
 from django.utils import timezone
 
+from courses.models import Course
+
 
 class UserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
@@ -48,12 +50,27 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField(default=False)
 
     objects = UserManager()
+    progresses = models.ManyToManyField(
+        Course,
+        through="enrollments.Enrollment",
+        related_name="students",
+        verbose_name="Зачисленные курсы",
+    )
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
 
     class Meta:
         db_table = "users"
+        indexes = [
+            models.Index(fields=["email"]),
+            models.Index(fields=["phone_number"]),
+        ]
+
+    def save(self, *args, **kwargs):
+        if self.role == self.Role.ADMIN:
+            self.is_staff = True
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.email
@@ -72,6 +89,10 @@ class Profile(models.Model):
 
     class Meta:
         db_table = "profiles"
+        indexes = [
+            models.Index(fields=["first_name"]),
+            models.Index(fields=["last_name"]),
+        ]
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}".strip() or self.user.email
@@ -96,6 +117,10 @@ class Verification(models.Model):
 
     class Meta:
         db_table = "verifications"
+        indexes = [
+            models.Index(fields=["user"]),
+            models.Index(fields=["verification_type"]),
+        ]
 
     def __str__(self):
         return f"{self.verification_type} for {self.user.email}"

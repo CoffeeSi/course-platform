@@ -24,7 +24,7 @@ environ.Env.read_env(BASE_DIR / ".env", overwrite=True)
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = env("DJANGO_SECRET_KEY", default="django-secret-key")
+SECRET_KEY = env("DJANGO_SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.bool("DJANGO_DEBUG", default=True)
@@ -57,13 +57,17 @@ SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
     "ROTATE_REFRESH_TOKENS": True,
-    "BLACKLIST_AFTER_ROTATION": True,
+    "BLACKLIST_AFTER_ROTATION": False,
 }
+
+JWT_AUTH_COOKIE_HTTP_ONLY = True
+JWT_AUTH_COOKIE_SECURE = True
+JWT_AUTH_COOKIE_SAMESITE = "Lax"
+JWT_AUTH_COOKIE_PATH = "/"
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
-        # "rest_framework.authentication.SessionAuthentication",
+        "users.authentication.CookieJWTAuthentication",
     ],
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
@@ -83,15 +87,21 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
 ]
 
 frontend_url = env.str("FRONTEND_URL", default="http://127.0.0.1:3000")
 if not frontend_url.startswith(("http://", "https://")):
     frontend_url = f"http://{frontend_url}"
 
-CORS_ALLOWED_ORIGINS = [
-    frontend_url,
-]
+if DEBUG:
+    CORS_ALLOW_ALL_ORIGINS = True
+else:
+    CORS_ALLOWED_ORIGINS = [
+        frontend_url,
+    ]
+
+CORS_ALLOW_CREDENTIALS = True
 
 ROOT_URLCONF = "config.urls"
 
@@ -119,11 +129,11 @@ WSGI_APPLICATION = "config.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": env("POSTGRES_DB", default="django"),
-        "USER": env("POSTGRES_USER", default="django"),
-        "PASSWORD": env("POSTGRES_PASSWORD", default="django"),
-        "HOST": env("POSTGRES_HOST", default="localhost"),
-        "PORT": env("POSTGRES_PORT", default="5432"),
+        "NAME": env("POSTGRES_DB"),
+        "USER": env("POSTGRES_USER"),
+        "PASSWORD": env("POSTGRES_PASSWORD"),
+        "HOST": env("POSTGRES_HOST"),
+        "PORT": env("POSTGRES_PORT"),
     }
 }
 
@@ -162,26 +172,29 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 
 # Celery
-CELERY_BROKER_URL = env("CELERY_BROKER_URL", default="redis://localhost:6379/0")
-CELERY_RESULT_BACKEND = env("CELERY_RESULT_BACKEND", default="redis://localhost:6379/0")
-CELERY_ACCEPT_CONTENT = env.list("CELERY_ACCEPT_CONTENT", default=["json"])
-CELERY_TASK_SERIALIZER = env("CELERY_TASK_SERIALIZER", default="json")
+CELERY_BROKER_URL = env.str("CELERY_BROKER_URL", default="redis://localhost:6379/0")
+CELERY_RESULT_BACKEND = env.str(
+    "CELERY_RESULT_BACKEND", default="redis://localhost:6379/0"
+)
+CELERY_ACCEPT_CONTENT = env("CELERY_ACCEPT_CONTENT", default=["json"])
+CELERY_TASK_SERIALIZER = env.str("CELERY_TASK_SERIALIZER", default="json")
 
 # Email
-EMAIL_HOST = env("EMAIL_HOST", default="smtp.gmail.com")
+EMAIL_HOST = env.str("EMAIL_HOST", default="smtp.gmail.com")
 EMAIL_PORT = env.int("EMAIL_PORT", default=587)
 EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
-EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
-EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
-DEFAULT_FROM_EMAIL = env(
+EMAIL_HOST_USER = env.str("EMAIL_HOST_USER", default="")
+EMAIL_HOST_PASSWORD = env.str("EMAIL_HOST_PASSWORD", default="")
+DEFAULT_FROM_EMAIL = env.str(
     "DEFAULT_FROM_EMAIL",
-    default=f"Course Platform <{env('EMAIL_HOST_USER', default='noreply@localhost')}>",
+    default=f"Course Platform <{env.str('EMAIL_HOST_USER', default='noreply@localhost')}>",
 )
-EMAIL_BACKEND = env(
+EMAIL_BACKEND = env.str(
     "EMAIL_BACKEND",
     default="django.core.mail.backends.smtp.EmailBackend",
 )
@@ -189,10 +202,10 @@ EMAIL_BACKEND = env(
 USE_MINIO = env.bool("USE_MINIO", default=True)
 
 if USE_MINIO:
-    AWS_ACCESS_KEY_ID = env("MINIO_ROOT_USER", default="minioadmin")
-    AWS_SECRET_ACCESS_KEY = env("MINIO_ROOT_PASSWORD", default="minioadmin")
-    AWS_STORAGE_BUCKET_NAME = env("MINIO_BUCKET_NAME", default="course-videos")
-    AWS_S3_ENDPOINT_URL = env("MINIO_ENDPOINT", default="http://127.0.0.1:9000")
+    AWS_ACCESS_KEY_ID = env.str("MINIO_ROOT_USER", default="minioadmin")
+    AWS_SECRET_ACCESS_KEY = env.str("MINIO_ROOT_PASSWORD", default="minioadmin")
+    AWS_STORAGE_BUCKET_NAME = env.str("MINIO_BUCKET_NAME", default="course-videos")
+    AWS_S3_ENDPOINT_URL = env.str("MINIO_ENDPOINT", default="http://127.0.0.1:9000")
 
     AWS_S3_USE_SSL = env.bool("MINIO_STORAGE_USE_SSL", default=False)
     AWS_S3_VERIFY = False

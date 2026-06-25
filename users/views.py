@@ -1,8 +1,10 @@
 from rest_framework import generics, serializers, status, views
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from drf_spectacular.utils import extend_schema, inline_serializer
 
+from config import settings
 from users.permissions import IsEmailVerified
 from users.tasks import send_verification_email
 from .models import User, Verification, Profile
@@ -14,6 +16,16 @@ from .serializers import (
 )
 import random
 from django.utils import timezone
+
+ACCESS_COOKIE_NAME = "access_token"
+REFRESH_COOKIE_NAME = "refresh_token"
+
+COOKIE_KWARGS = dict(
+    httponly=True,
+    secure=not settings.DEBUG,
+    samesite="Lax",
+    path="/",
+)
 
 
 MessageResponseSerializer = inline_serializer(
@@ -222,8 +234,73 @@ class CurrentUserProfileView(generics.RetrieveUpdateAPIView):
     """
 
     serializer_class = UserProfileSerializer
-    permission_classes = [IsEmailVerified]
+    permission_classes = [IsAuthenticated]
 
     def get_object(self):
         Profile.objects.get_or_create(user=self.request.user)
         return self.request.user
+
+
+class CookieTokenObtainPairView(TokenObtainPairView):
+    def post(self, request, *args, **kwargs):
+        response = super().post(request, *args, **kwargs)
+        if response.status_code == 200:
+            access = response.data.pop("access")
+            refresh = response.data.pop("refresh")
+            response.set_cookie(
+                ACCESS_COOKIE_NAME,
+                access,
+                max_age=int(
+                    settings.SIMPLE_JWT["ACCESS_TOKEN_LIFETIME"].total_seconds()
+                ),
+                **COOKIE_KWARGS,
+            )
+            response.set_cookie(
+                REFRESH_COOKIE_NAME,
+                refresh,
+                max_age=int(
+                    settings.SIMPLE_JWT["REFRESH_TOKEN_LIFETIME"].total_seconds()
+                ),
+                **COOKIE_KWARGS,
+            )
+            response.data = {"message": "Login successful"}
+        return response
+
+
+class CookieTokenRefreshView(TokenRefreshView):
+    def post(self, request, *args, **kwargs):
+        refresh_token = request.COOKIES.get(REFRESH_COOKIE_NAME)
+        if not refresh_token:
+            return Response({"detail": "Refresh token not found"}, status=401)
+
+        serializer = self.get_serializer(data={"refresh": refresh_token})
+        serializer.is_valid(raise_exception=True)
+
+        response = Response({"message": "Token refreshed"})
+        response.set_cookie(
+            ACCESS_COOKIE_NAME,
+            serializer.validated_data["access"],
+            max_age=int(settings.SIMPLE_JWT["ACCESS_TOKEN_LIFETIME"].total_seconds()),
+            **COOKIE_KWARGS,
+        )
+        new_refresh = serializer.validated_data.get("refresh")
+        if new_refresh:
+            response.set_cookie(
+                REFRESH_COOKIE_NAME,
+                new_refresh,
+                max_age=int(
+                    settings.SIMPLE_JWT["REFRESH_TOKEN_LIFETIME"].total_seconds()
+                ),
+                **COOKIE_KWARGS,
+            )
+        return response
+
+
+class LogoutView(views.APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        response = Response({"message": "Logged out"})
+        response.delete_cookie(ACCESS_COOKIE_NAME, path="/")
+        response.delete_cookie(REFRESH_COOKIE_NAME, path="/")
+        return response

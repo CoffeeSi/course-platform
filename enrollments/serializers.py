@@ -76,7 +76,9 @@ class EnrollmentCreateSerializer(serializers.ModelSerializer):
         """Prevent duplicate enrollment before the database constraint is hit."""
         user = self.context["request"].user
         if Enrollment.objects.filter(student=user, course=course).exists():
-            raise serializers.ValidationError("You are already enrolled in this course.")
+            raise serializers.ValidationError(
+                "You are already enrolled in this course."
+            )
         return course
 
     def create(self, validated_data):

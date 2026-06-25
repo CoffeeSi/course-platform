@@ -182,16 +182,21 @@ class UserEndpointSmokeTests(APITestCase):
             format="json",
         )
         self.assertEqual(login_response.status_code, status.HTTP_200_OK)
-        self.assertIn("access", login_response.data)
-        self.assertIn("refresh", login_response.data)
+        self.assertEqual(login_response.data["message"], "Login successful")
+        self.assertIn("course_platform_access", login_response.cookies)
+        self.assertIn("course_platform_refresh", login_response.cookies)
 
         refresh_response = self.client.post(
             reverse("token_refresh"),
-            {"refresh": login_response.data["refresh"]},
             format="json",
         )
         self.assertEqual(refresh_response.status_code, status.HTTP_200_OK)
-        self.assertIn("access", refresh_response.data)
+        self.assertEqual(refresh_response.data["message"], "Token refreshed")
+        self.assertIn("course_platform_access", refresh_response.cookies)
+
+        logout_response = self.client.post(reverse("logout"), format="json")
+        self.assertEqual(logout_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(logout_response.data["message"], "Logged out")
 
         schema_response = self.client.get(reverse("schema"))
         self.assertEqual(schema_response.status_code, status.HTTP_200_OK)

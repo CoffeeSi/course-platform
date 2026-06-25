@@ -1,6 +1,7 @@
 from rest_framework import viewsets, status
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
-from drf_spectacular.utils import extend_schema, OpenApiExample
+from drf_spectacular.utils import extend_schema
 from django.db import models
 from users.models import User
 from .models import Category, Course, Module, Lesson
@@ -127,6 +128,17 @@ class CourseViewSet(viewsets.ModelViewSet):
         instructor_id = self.request.query_params.get("instructor_id")
         if instructor_id:
             queryset = queryset.filter(instructor_id=instructor_id)
+
+        if self.action == "retrieve":
+            queryset = queryset.select_related(
+                "instructor", 
+                "category"
+            ).prefetch_related(
+                "modules__lessons"
+            )
+        
+        elif self.action == "list":
+            queryset = queryset.select_related("instructor", "category")
 
         return queryset
 

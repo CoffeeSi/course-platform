@@ -12,6 +12,7 @@ class Enrollment(models.Model):
     не сможет дважды зачислиться на один и тот же курс.
     """
 
+    id = models.AutoField(primary_key=True)
     student = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -28,12 +29,23 @@ class Enrollment(models.Model):
         auto_now_add=True, verbose_name="Дата зачисления"
     )
 
+    progresses = models.ManyToManyField(
+        Lesson,
+        through="Progress",
+        related_name="enrollments",
+        verbose_name="Прогресс",
+    )
+
     class Meta:
         db_table = "enrollments"
         verbose_name = "Зачисление"
         verbose_name_plural = "Зачисления"
         unique_together = ("student", "course")
         ordering = ["-enrolled_at"]
+        indexes = [
+            models.Index(fields=["student"]),
+            models.Index(fields=["course"]),
+        ]
 
     def __str__(self):
         return f"{self.student.email} -> {self.course.title}"
@@ -49,11 +61,14 @@ class Progress(models.Model):
     enrollment = models.ForeignKey(
         Enrollment,
         on_delete=models.CASCADE,
-        related_name="progress",
+        related_name="lesson_progress",
         verbose_name="Зачисление",
     )
     lesson = models.ForeignKey(
-        Lesson, on_delete=models.CASCADE, related_name="progress", verbose_name="Урок"
+        Lesson,
+        on_delete=models.CASCADE,
+        related_name="progress_records",
+        verbose_name="Урок",
     )
     is_completed = models.BooleanField(default=False, verbose_name="Завершен")
     completed_at = models.DateTimeField(
@@ -66,6 +81,10 @@ class Progress(models.Model):
         verbose_name_plural = "Прогресс"
         unique_together = ("enrollment", "lesson")
         ordering = ["lesson__order"]
+        indexes = [
+            models.Index(fields=["enrollment"]),
+            models.Index(fields=["lesson"]),
+        ]
 
     def __str__(self):
         status = "✓" if self.is_completed else "✗"
