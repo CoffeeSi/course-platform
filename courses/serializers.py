@@ -23,18 +23,31 @@ class CategorySerializer(serializers.ModelSerializer):
         }
 
 
-class LessonSerializer(serializers.ModelSerializer):
-    """
-    Сериализатор для урока.
+class CourseShortSerializer(serializers.ModelSerializer):
+    """Краткий курс для вложенности внутри модуля, чтобы не тянуть преподавателя и категорию снова"""
 
-    Содержит информацию об уроке: название, текстовый контент, ссылку на видео или видеофайл.
-    """
+    class Meta:
+        model = Course
+        fields = ["id", "title", "price", "is_published"]
+
+
+class ModuleShortSerializer(serializers.ModelSerializer):
+    """Краткий модуль для вложенности внутри урока, чтобы не тянуть уроки обратно"""
+
+    course_detail = CourseShortSerializer(source="course", read_only=True)
+
+    class Meta:
+        model = Module
+        fields = ["id", "title", "course", "course_detail", "order"]
+
+
+class LessonShortSerializer(serializers.ModelSerializer):
+    """Краткий урок для вложенности внутри модуля (без деталей модуля)"""
 
     class Meta:
         model = Lesson
         fields = [
             "id",
-            "module",
             "title",
             "content_text",
             "video_url",
@@ -43,86 +56,6 @@ class LessonSerializer(serializers.ModelSerializer):
             "is_free",
             "created_at",
         ]
-        extra_kwargs = {
-            "id": {"help_text": "Уникальный идентификатор урока"},
-            "module": {"help_text": "ID модуля, которому принадлежит урок"},
-            "title": {"help_text": "Название урока"},
-            "content_text": {"help_text": "Текстовый контент урока (опционально)"},
-            "video_url": {"help_text": "Ссылка на видео (YouTube, Vimeo и т.д.)"},
-            "video_file": {"help_text": "Загруженный видеофайл"},
-            "order": {"help_text": "Порядок сортировки в модуле"},
-            "is_free": {"help_text": "Флаг бесплатного урока"},
-            "created_at": {"help_text": "Дата создания урока"},
-        }
-
-    def validate_module(self, value):
-        user = self.context["request"].user
-        if (
-            user.role != User.Role.ADMIN
-            and not user.is_staff
-            and value.course.instructor != user
-        ):
-            raise serializers.ValidationError(
-                "Вы не можете добавлять уроки в этот модуль, так как не являетесь преподавателем курса."
-            )
-        return value
-
-
-class ModuleSerializer(serializers.ModelSerializer):
-    """
-    Сериализатор для модуля курса.
-
-    Содержит информацию о модуле и список всех уроков в модуле.
-    """
-
-    lessons = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Module
-        fields = ["id", "course", "title", "order", "lessons"]
-        extra_kwargs = {
-            "id": {"help_text": "Уникальный идентификатор модуля"},
-            "course": {"help_text": "ID курса, которому принадлежит модуль"},
-            "title": {"help_text": "Название модуля"},
-            "order": {"help_text": "Порядок сортировки в курсе"},
-            "lessons": {"help_text": "Список всех уроков в модуле"},
-        }
-
-    def get_lessons(self, obj):
-        request = self.context["request"]
-        user = request.user
-
-        if not request or not user.is_authenticated:
-            return []
-
-        if user.is_staff or user.role == User.Role.ADMIN:
-            return LessonSerializer(obj.lessons.all(), many=True).data
-
-        if obj.course.instructor == user:
-            return LessonSerializer(obj.lessons.all(), many=True).data
-
-        if Enrollment.objects.filter(student=user, course=obj.course).exists():
-            return LessonSerializer(obj.lessons.all(), many=True).data
-
-        free_lessons = obj.lessons.filter(is_free=True)
-        return LessonSerializer(free_lessons, many=True).data
-
-    def validate_course(self, value):
-        user = self.context["request"].user
-        if (
-            user.role != User.Role.ADMIN
-            and not user.is_staff
-            and value.instructor != user
-        ):
-            raise serializers.ValidationError(
-                "Вы не можете добавлять модули в этот курс, так как не являетесь его преподавателем."
-            )
-        return value
-
-    def validate_is_free(self, value):
-        if value.is_free == False:
-            raise serializers.ValidationError("Урок не может быть бесплатным.")
-        return value
 
 
 class CourseSerializer(serializers.ModelSerializer):
@@ -169,6 +102,127 @@ class CourseSerializer(serializers.ModelSerializer):
             "created_at": {"help_text": "Дата создания"},
             "updated_at": {"help_text": "Дата последнего обновления"},
         }
+
+
+class ModuleSerializer(serializers.ModelSerializer):
+    """
+    Сериализатор для модуля курса.
+
+    Содержит информацию о модуле и список всех уроков в модуле.
+    """
+
+    lessons = serializers.SerializerMethodField()
+    course_detail = CourseSerializer(source="course", read_only=True)
+
+    class Meta:
+        model = Module
+        fields = ["id", "course", "course_detail", "title", "order", "lessons"]
+        extra_kwargs = {
+            "id": {"help_text": "Уникальный идентификатор модуля"},
+            "course": {"help_text": "Курс, которому принадлежит модуль"},
+            "course_detail": {
+                "help_text": "Информация о курсе, которому принадлежит модуль"
+            },
+            "title": {"help_text": "Название модуля"},
+            "order": {"help_text": "Порядок сортировки в курсе"},
+            "lessons": {"help_text": "Список всех уроков в модуле"},
+        }
+
+    def get_lessons(self, obj):
+        request = self.context.get("request")
+        if getattr(request, "user", None) is None:
+            return LessonShortSerializer(obj.lessons.all(), many=True).data
+
+        user = request.user
+
+        if not user.is_authenticated:
+            free_lessons = obj.lessons.filter(is_free=True)
+            return LessonShortSerializer(free_lessons, many=True).data
+
+        if user.is_staff or user.role == User.Role.ADMIN:
+            return LessonShortSerializer(obj.lessons.all(), many=True).data
+
+        if obj.course.instructor_id == user.id:
+            return LessonShortSerializer(obj.lessons.all(), many=True).data
+
+        if Enrollment.objects.filter(
+            student_id=user.id, course_id=obj.course_id
+        ).exists():
+            return LessonShortSerializer(obj.lessons.all(), many=True).data
+
+        free_lessons = obj.lessons.filter(is_free=True)
+        return LessonShortSerializer(free_lessons, many=True).data
+
+    def validate_course(self, value):
+        request = self.context.get("request")
+        if not request or not request.user:
+            return value
+
+        user = request.user
+        if (
+            user.role != User.Role.ADMIN
+            and not user.is_staff
+            and value.instructor_id != user.id
+        ):
+            raise serializers.ValidationError(
+                "Вы не можете добавлять модули в этот курс, так как не являетесь его преподавателем."
+            )
+        return value
+
+
+class LessonSerializer(serializers.ModelSerializer):
+    """
+    Сериализатор для урока.
+
+    Содержит информацию об уроке: название, текстовый контент, ссылку на видео или видеофайл.
+    """
+
+    module_detail = ModuleShortSerializer(source="module", read_only=True)
+
+    class Meta:
+        model = Lesson
+        fields = [
+            "id",
+            "module",
+            "module_detail",
+            "title",
+            "content_text",
+            "video_url",
+            "video_file",
+            "order",
+            "is_free",
+            "created_at",
+        ]
+        extra_kwargs = {
+            "id": {"help_text": "Уникальный идентификатор урока"},
+            "module": {"help_text": "Модуль, которому принадлежит урок"},
+            "module_detail": {
+                "help_text": "Информация о модуле, которому принадлежит урок"
+            },
+            "title": {"help_text": "Название урока"},
+            "content_text": {"help_text": "Текстовый контент урока (опционально)"},
+            "video_url": {"help_text": "Ссылка на видео (YouTube, Vimeo и т.д.)"},
+            "video_file": {"help_text": "Загруженный видеофайл"},
+            "order": {"help_text": "Порядок сортировки в модуле"},
+            "is_free": {"help_text": "Флаг бесплатного урока"},
+            "created_at": {"help_text": "Дата создания урока"},
+        }
+
+    def validate_module(self, value):
+        request = self.context.get("request")
+        if not request or not request.user:
+            return value
+
+        user = request.user
+        if (
+            user.role != User.Role.ADMIN
+            and not user.is_staff
+            and value.course.instructor_id != user.id
+        ):
+            raise serializers.ValidationError(
+                "Вы не можете добавлять уроки в этот модуль, так как не являетесь преподавателем курса."
+            )
+        return value
 
 
 class CourseDetailSerializer(CourseSerializer):

@@ -1,5 +1,4 @@
 from rest_framework import viewsets, status
-from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from drf_spectacular.utils import extend_schema
 from django.db import models
@@ -15,6 +14,7 @@ from .serializers import (
 from .permissions import (
     IsAdminOrReadOnly,
     IsCourseInstructorOrReadOnly,
+    IsEnrolledInCourseOrAdmin,
     IsModuleInstructorOrReadOnly,
     IsLessonInstructorOrReadOnly,
 )
@@ -131,12 +131,9 @@ class CourseViewSet(viewsets.ModelViewSet):
 
         if self.action == "retrieve":
             queryset = queryset.select_related(
-                "instructor", 
-                "category"
-            ).prefetch_related(
-                "modules__lessons"
-            )
-        
+                "instructor", "category"
+            ).prefetch_related("modules__lessons")
+
         elif self.action == "list":
             queryset = queryset.select_related("instructor", "category")
 
@@ -227,7 +224,7 @@ class ModuleViewSet(viewsets.ModelViewSet):
         if course_id:
             queryset = queryset.filter(course_id=course_id)
 
-        return queryset
+        return queryset.select_related("course", "course__instructor")
 
     @extend_schema(
         summary="Список модулей",
@@ -301,7 +298,7 @@ class LessonViewSet(viewsets.ModelViewSet):
     - DELETE /api/v1/courses/lessons/{id}/ - удалить урок (автор или админ)
     """
 
-    permission_classes = [IsLessonInstructorOrReadOnly]
+    permission_classes = [IsLessonInstructorOrReadOnly, IsEnrolledInCourseOrAdmin]
     serializer_class = LessonSerializer
 
     def get_queryset(self):
@@ -323,7 +320,9 @@ class LessonViewSet(viewsets.ModelViewSet):
         if module_id:
             queryset = queryset.filter(module_id=module_id)
 
-        return queryset
+        return queryset.select_related(
+            "module", "module__course", "module__course__instructor"
+        )
 
     @extend_schema(
         summary="Список уроков",
