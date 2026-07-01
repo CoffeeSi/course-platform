@@ -61,7 +61,7 @@ SIMPLE_JWT = {
 }
 
 JWT_AUTH_COOKIE_HTTP_ONLY = True
-JWT_AUTH_COOKIE_SECURE = True
+JWT_AUTH_COOKIE_SECURE = False
 JWT_AUTH_COOKIE_SAMESITE = "Lax"
 JWT_AUTH_COOKIE_PATH = "/"
 
@@ -181,7 +181,7 @@ CELERY_BROKER_URL = env.str("CELERY_BROKER_URL", default="redis://localhost:6379
 CELERY_RESULT_BACKEND = env.str(
     "CELERY_RESULT_BACKEND", default="redis://localhost:6379/0"
 )
-CELERY_ACCEPT_CONTENT = env("CELERY_ACCEPT_CONTENT", default=["json"])
+CELERY_ACCEPT_CONTENT = env.list("CELERY_ACCEPT_CONTENT", default=["json"])
 CELERY_TASK_SERIALIZER = env.str("CELERY_TASK_SERIALIZER", default="json")
 
 # Email
@@ -206,6 +206,9 @@ if USE_MINIO:
     AWS_SECRET_ACCESS_KEY = env.str("MINIO_ROOT_PASSWORD", default="minioadmin")
     AWS_STORAGE_BUCKET_NAME = env.str("MINIO_BUCKET_NAME", default="course-videos")
     AWS_S3_ENDPOINT_URL = env.str("MINIO_ENDPOINT", default="http://127.0.0.1:9000")
+    AWS_S3_PUBLIC_ENDPOINT_URL = env.str(
+        "AWS_S3_PUBLIC_ENDPOINT_URL", default="http://localhost:9000"
+    )
 
     AWS_S3_USE_SSL = env.bool("MINIO_STORAGE_USE_SSL", default=False)
     AWS_S3_VERIFY = False

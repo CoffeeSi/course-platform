@@ -64,3 +64,10 @@ class LessonAdmin(admin.ModelAdmin):
 
     def get_course(self, obj):
         return obj.module.course.title
+
+    def reorder_lessons(self, module):
+        lessons = Lesson.objects.filter(module=module).order_by("order")
+        for index, lesson in enumerate(lessons, start=1):
+            if lesson.order != index:
+                lesson.order = index
+                lesson.save(update_fields=["order"])

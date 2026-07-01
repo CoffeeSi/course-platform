@@ -2,6 +2,7 @@ from decimal import Decimal
 
 from django.db import models
 from django.conf import settings
+from django.db.models import Max
 
 
 class Category(models.Model):
@@ -93,7 +94,13 @@ class Lesson(models.Model):
     title = models.CharField(max_length=255, verbose_name="Название урока")
     content_text = models.TextField(blank=True, verbose_name="Текстовый контент")
 
-    video_url = models.URLField(blank=True, null=True, verbose_name="Ссылка на видео")
+    video_url = models.CharField(
+        max_length=500,
+        blank=True,
+        null=True,
+        verbose_name="Ссылка на видео",
+        help_text="Введите S3 ключ объекта, например: videos/javascript_dom_lesson.mp4",
+    )
     video_file = models.FileField(
         upload_to="videos/",
         blank=True,
@@ -103,7 +110,11 @@ class Lesson(models.Model):
 
     is_free = models.BooleanField(default=False, verbose_name="Бесплатный")
 
-    order = models.PositiveIntegerField(default=0, verbose_name="Порядок сортировки")
+    order = models.PositiveIntegerField(
+        default=0,
+        verbose_name="Порядок сортировки",
+        blank=True,
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -116,5 +127,36 @@ class Lesson(models.Model):
             models.Index(fields=["title"]),
         ]
 
+    def save(self, *args, **kwargs):
+        if self.pk is None and not self.order:
+            max_order = Lesson.objects.filter(module=self.module).aggregate(
+                Max("order")
+            )["order__max"]
+
+            if max_order is not None:
+                self.order = max_order + 1
+            else:
+                self.order = 1
+
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f"Урок {self.order}: {self.title}"
+
+    @property
+    def get_next_lesson_id(self):
+        next_lesson = (
+            Lesson.objects.filter(module=self.module, order__gt=self.order)
+            .order_by("order")
+            .first()
+        )
+        return next_lesson.id if next_lesson else None
+
+    @property
+    def get_prev_lesson_id(self):
+        prev_lesson = (
+            Lesson.objects.filter(module=self.module, order__lt=self.order)
+            .order_by("-order")
+            .first()
+        )
+        return prev_lesson.id if prev_lesson else None

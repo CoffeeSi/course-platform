@@ -178,6 +178,8 @@ class LessonSerializer(serializers.ModelSerializer):
     """
 
     module_detail = ModuleShortSerializer(source="module", read_only=True)
+    next_lesson_id = serializers.ReadOnlyField(source="get_next_lesson_id")
+    prev_lesson_id = serializers.ReadOnlyField(source="get_prev_lesson_id")
 
     class Meta:
         model = Lesson
@@ -190,6 +192,8 @@ class LessonSerializer(serializers.ModelSerializer):
             "video_url",
             "video_file",
             "order",
+            "next_lesson_id",
+            "prev_lesson_id",
             "is_free",
             "created_at",
         ]
@@ -203,6 +207,8 @@ class LessonSerializer(serializers.ModelSerializer):
             "content_text": {"help_text": "Текстовый контент урока (опционально)"},
             "video_url": {"help_text": "Ссылка на видео (YouTube, Vimeo и т.д.)"},
             "video_file": {"help_text": "Загруженный видеофайл"},
+            "prev_lesson_id": {"help_text": "Идентификатор предыдущего урока"},
+            "next_lesson_id": {"help_text": "Идентификатор следующего урока"},
             "order": {"help_text": "Порядок сортировки в модуле"},
             "is_free": {"help_text": "Флаг бесплатного урока"},
             "created_at": {"help_text": "Дата создания урока"},
