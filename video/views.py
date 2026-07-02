@@ -6,10 +6,18 @@ from django.utils import timezone
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework import serializers
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema, inline_serializer, OpenApiParameter
 from urllib.parse import urlparse
 
 from courses.models import Lesson
 from enrollments.models import Enrollment, Progress
+
+VideoUrlResponseSerializer = inline_serializer(
+    name="VideoUrlResponse",
+    fields={"url": serializers.CharField()},
+)
 
 
 class VideoURLView(APIView):
@@ -48,6 +56,26 @@ class VideoURLView(APIView):
             progress.completed_at = timezone.now()
             progress.save(update_fields=["is_completed", "completed_at"])
 
+    @extend_schema(
+        summary="Получить защищенную ссылку на видео",
+        description="Сформировать временную подписанную ссылку на видеофайл по ключу объекта или по lesson_id.",
+        parameters=[
+            OpenApiParameter(
+                name="key",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                description="Ключ видеофайла или URL объекта хранения",
+            ),
+            OpenApiParameter(
+                name="lesson_id",
+                type=OpenApiTypes.INT,
+                location=OpenApiParameter.QUERY,
+                description="ID урока, для которого нужно отметить прогресс и найти видео",
+            ),
+        ],
+        responses={200: VideoUrlResponseSerializer},
+        tags=["Видео"],
+    )
     def get(self, request):
         raw_video_key = request.query_params.get("key")
         if not raw_video_key:

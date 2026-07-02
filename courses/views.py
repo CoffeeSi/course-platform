@@ -72,6 +72,14 @@ class CategoryViewSet(viewsets.ModelViewSet):
         return super().update(request, *args, **kwargs)
 
     @extend_schema(
+        summary="Частично обновить категорию",
+        description="Частично обновить данные категории курсов (только для администраторов).",
+        tags=["Категории"],
+    )
+    def partial_update(self, request, *args, **kwargs):
+        return super().partial_update(request, *args, **kwargs)
+
+    @extend_schema(
         summary="Удалить категорию",
         description="Удалить категорию (только для администраторов)",
         tags=["Категории"],
@@ -175,6 +183,14 @@ class CourseViewSet(viewsets.ModelViewSet):
         return super().update(request, *args, **kwargs)
 
     @extend_schema(
+        summary="Частично обновить курс",
+        description="Частично обновить данные курса (автор курса или администратор).",
+        tags=["Курсы"],
+    )
+    def partial_update(self, request, *args, **kwargs):
+        return super().partial_update(request, *args, **kwargs)
+
+    @extend_schema(
         summary="Удалить курс",
         description="Удалить курс (только автор или администратор)",
         tags=["Курсы"],
@@ -269,6 +285,14 @@ class ModuleViewSet(viewsets.ModelViewSet):
     )
     def update(self, request, *args, **kwargs):
         return super().update(request, *args, **kwargs)
+
+    @extend_schema(
+        summary="Частично обновить модуль",
+        description="Частично обновить данные модуля (только преподаватель или администратор).",
+        tags=["Модули"],
+    )
+    def partial_update(self, request, *args, **kwargs):
+        return super().partial_update(request, *args, **kwargs)
 
     @extend_schema(
         summary="Удалить модуль",
@@ -367,6 +391,14 @@ class LessonViewSet(viewsets.ModelViewSet):
     )
     def update(self, request, *args, **kwargs):
         return super().update(request, *args, **kwargs)
+
+    @extend_schema(
+        summary="Частично обновить урок",
+        description="Частично обновить данные урока (только преподаватель или администратор).",
+        tags=["Уроки"],
+    )
+    def partial_update(self, request, *args, **kwargs):
+        return super().partial_update(request, *args, **kwargs)
 
     @extend_schema(
         summary="Удалить урок",

@@ -299,6 +299,12 @@ class CookieTokenRefreshView(TokenRefreshView):
 class LogoutView(views.APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        summary="Выход из системы",
+        description="Удалить HttpOnly cookies access и refresh токенов пользователя.",
+        responses={200: MessageResponseSerializer},
+        tags=["Аутентификация"],
+    )
     def post(self, request):
         response = Response({"message": "Logged out"})
         response.delete_cookie(ACCESS_COOKIE_NAME, path="/")

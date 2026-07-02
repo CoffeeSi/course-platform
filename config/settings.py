@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from datetime import timedelta
+import os
 from pathlib import Path
 import environ
 
@@ -49,6 +50,7 @@ INSTALLED_APPS = [
     "users",
     "courses",
     "enrollments",
+    "payments",
 ]
 
 AUTH_USER_MODEL = "users.User"
@@ -90,7 +92,7 @@ MIDDLEWARE = [
     "whitenoise.middleware.WhiteNoiseMiddleware",
 ]
 
-frontend_url = env.str("FRONTEND_URL", default="http://127.0.0.1:3000")
+frontend_url = env.str("FRONTEND_URL", default="http://localhost:3000")
 if not frontend_url.startswith(("http://", "https://")):
     frontend_url = f"http://{frontend_url}"
 
@@ -173,8 +175,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = "/static/"
-STATIC_ROOT = BASE_DIR / "staticfiles"
-
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 
 # Celery
 CELERY_BROKER_URL = env.str("CELERY_BROKER_URL", default="redis://localhost:6379/0")
@@ -232,3 +233,15 @@ SPECTACULAR_SETTINGS = {
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
 }
+
+PAYMENT_DEFAULT_CURRENCY = env.str("PAYMENT_DEFAULT_CURRENCY", default="USD")
+STRIPE_SECRET_KEY = env.str("STRIPE_SECRET_KEY", default="")
+STRIPE_SUCCESS_URL = env.str(
+    "STRIPE_SUCCESS_URL",
+    default=f"{frontend_url}/payment/success?session_id={{CHECKOUT_SESSION_ID}}",
+)
+STRIPE_CANCEL_URL = env.str(
+    "STRIPE_CANCEL_URL",
+    default=f"{frontend_url}/payment/cancel",
+)
+STRIPE_WEBHOOK_SECRET = env.str("STRIPE_WEBHOOK_SECRET", default="")

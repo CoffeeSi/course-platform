@@ -1,9 +1,14 @@
-from rest_framework import generics, status, viewsets
+from rest_framework import generics, serializers, status, viewsets
 from rest_framework.decorators import APIView, action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import extend_schema, OpenApiExample, OpenApiParameter
+from drf_spectacular.utils import (
+    extend_schema,
+    OpenApiExample,
+    OpenApiParameter,
+    inline_serializer,
+)
 from django.db.models import QuerySet
 from django.utils import timezone
 
@@ -17,6 +22,15 @@ from .serializers import (
 )
 from .permissions import IsEnrollmentOwner
 from users.permissions import IsEmailVerified
+
+CourseStatusResponseSerializer = inline_serializer(
+    name="CourseStatusResponse",
+    fields={
+        "course_id": serializers.IntegerField(),
+        "is_enrolled": serializers.BooleanField(),
+        "progress_percent": serializers.IntegerField(),
+    },
+)
 
 
 @extend_schema(
@@ -123,6 +137,20 @@ class EnrollmentDetailView(generics.RetrieveDestroyAPIView):
 class CheckCourseStatusView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        summary="Статус зачисления на курс",
+        description="Проверить, зачислен ли текущий пользователь на курс, и получить процент прогресса.",
+        parameters=[
+            OpenApiParameter(
+                name="course_id",
+                type=OpenApiTypes.INT,
+                location=OpenApiParameter.PATH,
+                description="ID курса",
+            )
+        ],
+        responses={200: CourseStatusResponseSerializer},
+        tags=["Зачисления"],
+    )
     def get(self, request, course_id: int):
         user = request.user
 
