@@ -1,9 +1,0 @@
-[submodule "backend"]
-	path = backend
-	url = https://github.com/CoffeeSi/course-platform-backend.git
-    branch = main
-
-[submodule "frontend"]
-	path = frontend
-	url = https://github.com/CoffeeSi/course-platform-frontend.git
-    branch = main
