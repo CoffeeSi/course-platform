@@ -10,9 +10,10 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
-from datetime import timedelta
 import os
+from datetime import timedelta
 from pathlib import Path
+
 import environ
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -200,18 +201,18 @@ EMAIL_BACKEND = env.str(
     default="django.core.mail.backends.smtp.EmailBackend",
 )
 
-USE_MINIO = env.bool("USE_MINIO", default=True)
+USE_SEAWEEDFS = env.bool("USE_SEAWEEDFS", default=True)
 
-if USE_MINIO:
-    AWS_ACCESS_KEY_ID = env.str("MINIO_ROOT_USER", default="minioadmin")
-    AWS_SECRET_ACCESS_KEY = env.str("MINIO_ROOT_PASSWORD", default="minioadmin")
-    AWS_STORAGE_BUCKET_NAME = env.str("MINIO_BUCKET_NAME", default="course-videos")
-    AWS_S3_ENDPOINT_URL = env.str("MINIO_ENDPOINT", default="http://127.0.0.1:9000")
+if USE_SEAWEEDFS:
+    AWS_ACCESS_KEY_ID = env.str("SEAWOODFS_ROOT_USER", default="admin")
+    AWS_SECRET_ACCESS_KEY = env.str("SEAWOODFS_ROOT_PASSWORD", default="password")
+    AWS_STORAGE_BUCKET_NAME = env.str("SEAWOODFS_BUCKET_NAME", default="course-videos")
+    AWS_S3_ENDPOINT_URL = env.str("SEAWOODFS_ENDPOINT", default="http://127.0.0.1:8333")
     AWS_S3_PUBLIC_ENDPOINT_URL = env.str(
-        "AWS_S3_PUBLIC_ENDPOINT_URL", default="http://localhost:9000"
+        "AWS_S3_PUBLIC_ENDPOINT_URL", default="http://localhost:8333"
     )
 
-    AWS_S3_USE_SSL = env.bool("MINIO_STORAGE_USE_SSL", default=False)
+    AWS_S3_USE_SSL = env.bool("SEAWOODFS_STORAGE_USE_SSL", default=False)
     AWS_S3_VERIFY = False
 
     # Enable temporary signed URLs for private video access

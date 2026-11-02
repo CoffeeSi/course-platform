@@ -17,37 +17,22 @@ services:
       retries: 5
 
   redis:
-    image: redis:8.8-alpine3.23
+    image: redis:8-alpine
     restart: always
     environment:
       REDIS_PORT: ${REDIS_PORT:-6379}
     ports:
       - ${REDIS_PORT}:6379
 
-  minio:
-    image: minio/minio:latest
+  seaweedfs:
+    image: chrislusf/seaweedfs:latest
     restart: always
-    environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
-      MINIO_SERVER_URL: ${MINIO_ENDPOINT:-http://minio:9000}
     ports:
-      - "9000:9000"
-      - "9001:9001"
-    command: server /data --console-address ":9001"
+      - "8333:8333"
+      - "9333:9333"
+    command: server -dir=/data -s3
     volumes:
-      - minio_data:/data
-
-  minio-create-buckets:
-    image: minio/mc
-    depends_on:
-      - minio
-    entrypoint: >
-      /bin/sh -c "
-      until /usr/bin/mc alias set myminio ${MINIO_ENDPOINT:-http://minio:9000} minioadmin minioadmin; do echo 'Waiting for MinIO...'; sleep 1; done;
-      /usr/bin/mc mb myminio/course-videos || true;
-      exit 0;
-      "
+      - seaweed_data:/data
 
   backend:
     build: ./backend
@@ -74,17 +59,19 @@ services:
       EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD:-your_email_password}
       DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL:-Course Platform <someemail@gmail.com>}
       EMAIL_BACKEND: ${EMAIL_BACKEND:-django.core.mail.backends.smtp.EmailBackend}
-      USE_MINIO: ${USE_MINIO:-True}
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
-      MINIO_ENDPOINT: ${MINIO_ENDPOINT:-http://minio:9000}
-      MINIO_PUBLIC_ENDPOINT_URL: ${MINIO_PUBLIC_ENDPOINT_URL:-http://localhost:9000}
-      MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME:-course-videos}
-      MINIO_STORAGE_USE_SSL: ${MINIO_STORAGE_USE_SSL:-False}
+      USE_SEAWEEDFS: ${USE_SEAWEEDFS:-True}
+      SEAWEEDFS_ROOT_USER: ${SEAWOODFS_ROOT_USER:-admin}
+      SEAWEEDFS_ROOT_PASSWORD: ${SEAWOODFS_ROOT_PASSWORD:-password}
+      SEAWEEDFS_ENDPOINT: ${SEAWOODFS_ENDPOINT:-http://seaweedfs:8333}
+      SEAWEEDFS_PUBLIC_ENDPOINT_URL: ${SEAWOODFS_PUBLIC_ENDPOINT_URL:-http://localhost:8333}
+      SEAWEEDFS_BUCKET_NAME: ${SEAWOODFS_BUCKET_NAME:-course-videos}
+      SEAWEEDFS_STORAGE_USE_SSL: ${SEAWOODFS_STORAGE_USE_SSL:-False}
     depends_on:
       - postgres
       - redis
-      - minio
+      - seaweedfs
+    ports:
+      - "8000:8000"
     volumes:
       - django_static:/app/staticfiles
 
@@ -103,16 +90,16 @@ services:
       - redis
       - backend
 
-  stripe-cli:
-    image: stripe/stripe-cli:latest
-    container_name: stripe-cli
-    command: >
-      listen 
-      --api-key ${STRIPE_SECRET_KEY} 
-      --forward-to http://backend:8000/api/v1/payments/webhooks/stripe/
-    depends_on:
-      - backend
-    restart: unless-stopped
+  # stripe-cli:
+  #   image: stripe/stripe-cli:latest
+  #   container_name: stripe-cli
+  #   command: >
+  #     listen 
+  #     --api-key ${STRIPE_SECRET_KEY} 
+  #     --forward-to http://backend:8000/api/v1/payments/webhooks/stripe/
+  #   depends_on:
+  #     - backend
+  #   restart: unless-stopped
 
   # frontend:
   #   build: ./frontend
@@ -139,5 +126,5 @@ services:
 
 volumes:
   postgres_data:
-  minio_data:
+  seaweed_data:
   django_static:
