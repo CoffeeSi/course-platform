@@ -66,6 +66,16 @@ services:
       SEAWEEDFS_PUBLIC_ENDPOINT_URL: ${SEAWOODFS_PUBLIC_ENDPOINT_URL:-http://localhost:8333}
       SEAWEEDFS_BUCKET_NAME: ${SEAWOODFS_BUCKET_NAME:-course-videos}
       SEAWEEDFS_STORAGE_USE_SSL: ${SEAWOODFS_STORAGE_USE_SSL:-False}
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import socket; s = socket.create_connection(('127.0.0.1', 8000), timeout=2); s.close()"
+      interval: 3s
+      timeout: 3s
+      retries: 20
+      start_period: 30s
     depends_on:
       - postgres
       - redis
@@ -101,16 +111,16 @@ services:
   #     - backend
   #   restart: unless-stopped
 
-  # frontend:
-  #   build: ./frontend
-  #   restart: always
-  #   environment:
-  #     NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL}
-  #     BACKEND_URL: ${BACKEND_URL:-http://nginx}
-  #   depends_on:
-  #     - backend
+  frontend:
+    build: ./frontend
+    restart: always
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL}
+      BACKEND_URL: ${BACKEND_URL:-http://backend:8000}
+    depends_on:
+      backend:
+        condition: service_healthy
 
-  
   nginx:
     image: nginx:latest
     ports:
@@ -120,9 +130,14 @@ services:
       - ./src:/usr/share/nginx/html
       - django_static:/var/www/django/static:ro
     depends_on:
-      - backend
-      # - frontend
-
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_started
+    develop:
+      watch:
+        - action: restart
+          path: ./nginx/nginx.conf
 
 volumes:
   postgres_data:

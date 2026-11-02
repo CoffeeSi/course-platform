@@ -37,4 +37,4 @@ COPY --from=builder /app /app
 
 EXPOSE 8000
 
-CMD ["sh", "-c", "uv run python manage.py collectstatic --noinput && uv run python manage.py migrate && uv run granian --interface asginl --port 8000 --host 0.0.0.0 config.asgi:application"]
+CMD ["sh", "-c", "python manage.py collectstatic --noinput && python manage.py migrate && granian --interface asginl --port 8000 --host 0.0.0.0 config.asgi:application"]

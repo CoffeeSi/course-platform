@@ -16,11 +16,11 @@ Including another URLconf
 """
 
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import include, path
 from drf_spectacular.views import (
     SpectacularAPIView,
-    SpectacularSwaggerView,
     SpectacularRedocView,
+    SpectacularSwaggerView,
 )
 
 urlpatterns = [
@@ -36,6 +36,7 @@ urlpatterns = [
         name="redoc",
     ),
     path("admin/", admin.site.urls),
+    path("accounts/", include("allauth.urls")),
     path("api/v1/users/", include("users.urls")),
     path("api/v1/courses/", include("courses.urls")),
     path("api/v1/enrollments/", include("enrollments.urls")),
