@@ -77,15 +77,15 @@ services:
 
   celery_worker:
     build: ./backend
-    command: celery -A config worker -l info -P solo
+    command: uv run celery -A config worker -l info -P solo
     restart: always
     volumes:
-      - .:/app
+      - ./backend:/app
+      - /app/.venv
     env_file:
       - .env
     environment:
       - CELERY_BROKER_URL=redis://redis:6379/0
-      - PYTHONPATH=./backend
     depends_on:
       - redis
       - backend
