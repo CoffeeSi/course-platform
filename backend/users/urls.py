@@ -1,18 +1,20 @@
 from django.urls import path
+from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import (
     TokenObtainPairSerializer,
     TokenRefreshSerializer,
 )
-from drf_spectacular.utils import extend_schema, inline_serializer
+
 from users.views import (
     CookieTokenObtainPairView,
     CookieTokenRefreshView,
+    CurrentUserProfileView,
     LogoutView,
     RegisterView,
-    VerifyEmailView,
     ResendVerificationEmailView,
-    CurrentUserProfileView,
+    VerifyEmailView,
+    csrf_token,
 )
 
 
@@ -68,4 +70,5 @@ urlpatterns = [
     path("login/", DocumentedTokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("token/refresh/", DocumentedTokenRefreshView.as_view(), name="token_refresh"),
     path("logout/", LogoutView.as_view(), name="logout"),
+    path("csrf/", csrf_token, name="csrf_token"),
 ]

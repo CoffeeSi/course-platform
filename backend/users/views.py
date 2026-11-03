@@ -1,31 +1,42 @@
+import random
+
+from django.http import JsonResponse
+from django.middleware.csrf import get_token
+from django.utils import timezone
+from django.views.decorators.cache import never_cache
+from django.views.decorators.http import require_GET
+from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework import generics, serializers, status, views
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-from drf_spectacular.utils import extend_schema, inline_serializer
 
 from config import settings
-from users.permissions import IsEmailVerified
 from users.tasks import send_verification_email
-from .models import User, Verification, Profile
+
+from .models import Profile, User, Verification
 from .serializers import (
-    UserRegisterSerializer,
-    VerificationSerializer,
     ResendVerificationSerializer,
     UserProfileSerializer,
+    UserRegisterSerializer,
+    VerificationSerializer,
 )
-import random
-from django.utils import timezone
 
 ACCESS_COOKIE_NAME = "access_token"
 REFRESH_COOKIE_NAME = "refresh_token"
 
-COOKIE_KWARGS = dict(
-    httponly=True,
-    secure=not settings.DEBUG,
-    samesite="Lax",
-    path="/",
-)
+COOKIE_KWARGS = {
+    "httponly": True,
+    "secure": not settings.DEBUG,
+    "samesite": "Lax",
+    "path": "/",
+}
+
+
+@never_cache
+@require_GET
+def csrf_token(request):
+    return JsonResponse({"csrfToken": get_token(request)})
 
 
 MessageResponseSerializer = inline_serializer(
