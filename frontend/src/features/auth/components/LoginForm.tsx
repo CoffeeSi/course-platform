@@ -1,7 +1,9 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { FormEvent, useState } from "react";
+import { useState } from "react";
+import styles from "@/components/ui/styles/form.module.css";
+import type { SubmitEvent } from "react";
 import { authApi } from "@/features/auth/api/auth.api";
 import { LoginPayload } from "@/features/auth/types/auth.types";
 import { useRouter } from "next/navigation";
@@ -11,7 +13,7 @@ export function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
@@ -27,22 +29,22 @@ export function LoginForm() {
 
       router.push('/profile');
       router.refresh();
-    } catch (err) {
-      setError('Неверный email или пароль');
+    } catch {
+      setError('Неверная электронная почта или пароль');
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+    <form onSubmit={handleSubmit} className={styles.form}>
       <label className="flex flex-col gap-2 text-sm font-medium">
-        Email
+        Электронная почта
         <input
           type="email"
           name="email"
           required
-          className="h-10 rounded-md border px-3"
+          className={styles.input}
         />
       </label>
       <label className="flex flex-col gap-2 text-sm font-medium">
@@ -51,14 +53,14 @@ export function LoginForm() {
           type="password"
           name="password"
           required
-          className="h-10 rounded-md border px-3"
+          className={styles.input}
         />
       </label>
       {error ? (
         <p className="text-sm text-destructive">Не удалось войти. Проверьте электронную почту и пароль</p>
       ) : null}
-      <Button type="submit" disabled={isLoading}>
-        {isLoading ? "Logging in..." : "Login"}
+      <Button type="submit" className={`${styles.button} hover:bg-primary`} disabled={isLoading}>
+        {isLoading ? "Входим…" : "Войти"}
       </Button>
     </form>
   )

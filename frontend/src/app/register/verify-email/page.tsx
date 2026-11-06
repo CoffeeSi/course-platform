@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import getCurrentUser from "@/features/auth/utils/getCurrentUser";
-import { VerifyEmailForm } from "./VerifyEmailForm";
+import { VerifyEmailForm } from "@/features/auth/components/VerifyEmailForm";
 
 export default async function VerifyEmailPage({
   searchParams,

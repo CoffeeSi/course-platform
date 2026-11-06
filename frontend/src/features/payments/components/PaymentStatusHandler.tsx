@@ -4,12 +4,12 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function PaymentStatusHandler({ sessionId }: { sessionId?: string }) {
-  const [status, setStatus] = useState<'loading' | 'success' | 'error' | 'failed'>('loading');
+  const [pollingStatus, setStatus] = useState<'loading' | 'success' | 'error' | 'failed'>('loading');
+  const status = sessionId ? pollingStatus : 'error';
   const router = useRouter();
 
   useEffect(() => {
     if (!sessionId) {
-      setStatus('error');
       return;
     }
 

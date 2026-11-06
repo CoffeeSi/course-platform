@@ -12,7 +12,7 @@ const getCurrentUser = cache(async () => {
 
   try {
     return await usersApi.fetchProfile(token);
-  } catch (error) {
+  } catch {
     return null;
   }
 });
