@@ -27,7 +27,7 @@ export function LoginForm() {
 
       router.push('/profile');
       router.refresh();
-    } catch (err) {
+    } catch {
       setError('Неверный email или пароль');
     } finally {
       setIsLoading(false);

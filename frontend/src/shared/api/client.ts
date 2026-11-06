@@ -76,7 +76,7 @@ export const client = {
   get: <T>(endpoint: string, options?: CustomRequestInit) =>
     customFetch<T>(endpoint, { ...options, method: 'GET' }),
 
-  post: <T>(endpoint: string, body?: any, options?: CustomRequestInit) => {
+  post: <T>(endpoint: string, body?: unknown, options?: CustomRequestInit) => {
     const isFormData = body instanceof FormData;
     return customFetch<T>(endpoint, {
       ...options,
@@ -85,7 +85,7 @@ export const client = {
     });
   },
 
-  patch: <T>(endpoint: string, body?: any, options?: CustomRequestInit) => {
+  patch: <T>(endpoint: string, body?: unknown, options?: CustomRequestInit) => {
     const isFormData = body instanceof FormData;
     return customFetch<T>(endpoint, {
       ...options,

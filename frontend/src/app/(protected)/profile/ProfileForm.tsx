@@ -4,8 +4,9 @@ import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { usersApi } from "@/features/users/api/users.api";
+import type { UserProfile } from "@/features/users/types/users.types";
 
-export function ProfileForm({ initialData }: { initialData: any }) {
+export function ProfileForm({ initialData }: { initialData: UserProfile["profile"] }) {
   const [isPending, setIsPending] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [isError, setIsError] = useState(false);
@@ -31,7 +32,7 @@ export function ProfileForm({ initialData }: { initialData: any }) {
       await usersApi.updateProfile(payload);
       setIsSuccess(true);
       router.refresh();
-    } catch (error) {
+    } catch {
       setIsError(true);
     } finally {
       setIsPending(false);
