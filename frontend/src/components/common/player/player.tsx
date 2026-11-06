@@ -6,7 +6,7 @@ import { createPlayer, videoFeatures } from '@videojs/react';
 import { VideoSkin, Video } from '@videojs/react/video';
 import client from '@/shared/api/client';
 
-const Player = createPlayer({ features: videoFeatures });
+const { Player } = createPlayer({ features: videoFeatures });
 
 interface MyPlayerProps {
   videoKey: string;
@@ -62,7 +62,7 @@ export const VideoPlayer = ({ videoKey }: MyPlayerProps) => {
   if (!streamUrl) return <div className="text-muted-foreground animate-pulse p-4 text-center">Securing storage connection...</div>;
 
   return (
-    <Player.Provider key={playerKey}>
+    <Player key={playerKey}>
       <VideoSkin>
         <Video
           src={streamUrl}
@@ -70,6 +70,6 @@ export const VideoPlayer = ({ videoKey }: MyPlayerProps) => {
           suppressHydrationWarning
         />
       </VideoSkin>
-    </Player.Provider>
+    </Player>
   );
 };

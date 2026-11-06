@@ -1,8 +1,10 @@
 from rest_framework import serializers
+
+from enrollments.models import Enrollment
 from users.models import User
 from users.serializers import UserSerializer
-from .models import Category, Course, Module, Lesson
-from enrollments.models import Enrollment
+
+from .models import Category, Course, Lesson, Module
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -85,6 +87,7 @@ class CourseSerializer(serializers.ModelSerializer):
             "category_id",
             "title",
             "description",
+            "image",
             "price",
             "is_published",
             "created_at",
@@ -97,6 +100,7 @@ class CourseSerializer(serializers.ModelSerializer):
             "category_id": {"help_text": "ID категории (для создания/обновления)"},
             "title": {"help_text": "Название курса"},
             "description": {"help_text": "Описание курса"},
+            "image": {"help_text": "Изображение курса"},
             "price": {"help_text": "Цена курса"},
             "is_published": {"help_text": "Опубликован ли курс"},
             "created_at": {"help_text": "Дата создания"},
