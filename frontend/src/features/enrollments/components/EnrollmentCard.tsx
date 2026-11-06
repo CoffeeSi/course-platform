@@ -3,13 +3,14 @@ import Link from "next/link";
 import { Enrollment } from "@/features/enrollments/types/enrollment.type";
 import { enrollmentsApi } from "@/features/enrollments/api/enrollmets.api";
 import { cookies } from "next/headers";
+import { cardSurface } from "@/components/ui/card";
 
 export async function EnrollmentCard({ enrollment }: { enrollment: Enrollment }) {
     const token = (await cookies()).get("access_token")?.value;
     const status = await enrollmentsApi.fetchEnrollmentStatus(enrollment.id, token);
 
     return (
-        <li className="rounded-md border p-4">
+        <li className={`${cardSurface} p-6`}>
             <h2 className="text-xl font-semibold">{enrollment.course_details.title}</h2>
             <p className="mt-2 text-sm text-muted-foreground">
                 {enrollment.course_details.description}

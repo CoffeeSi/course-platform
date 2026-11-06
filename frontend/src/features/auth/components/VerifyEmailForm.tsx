@@ -5,6 +5,8 @@ import type { SubmitEvent } from "react";
 import { useRouter } from "next/navigation";
 import { authApi } from "@/features/auth/api/auth.api";
 import { ApiError } from "@/shared/api/client";
+import { cardSurface } from "@/components/ui/card";
+import styles from "@/components/ui/styles/form.module.css";
 
 export function VerifyEmailForm({ initialEmail }: { initialEmail: string }) {
     const router = useRouter();
@@ -78,7 +80,7 @@ export function VerifyEmailForm({ initialEmail }: { initialEmail: string }) {
 
     if (isVerified) {
         return (
-            <main className="flex flex-col items-center justify-center min-h-[60vh] max-w-md mx-auto p-4 text-center">
+            <main className={`${cardSurface} flex flex-col items-center justify-center min-h-[60vh] max-w-md mx-auto p-6 my-12 text-center`}>
                 <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-6 shadow-sm animate-bounce">
                     <svg
                         className="w-8 h-8"
@@ -116,7 +118,7 @@ export function VerifyEmailForm({ initialEmail }: { initialEmail: string }) {
     }
 
     return (
-        <main className="flex flex-col items-center justify-center min-h-[60vh] max-w-md mx-auto p-6 border rounded-2xl shadow-sm bg-card my-12">
+        <main className={`${cardSurface} flex flex-col items-center justify-center min-h-[60vh] max-w-md mx-auto p-6 my-12`}>
             <h1 className="text-2xl font-bold mb-2 text-center text-foreground">
                 Подтвердите ваш Email
             </h1>
@@ -129,7 +131,7 @@ export function VerifyEmailForm({ initialEmail }: { initialEmail: string }) {
                 .
             </p>
 
-            <form onSubmit={onSubmit} className="w-full flex flex-col gap-4">
+            <form onSubmit={onSubmit} className={`${styles.form} w-full`}>
                 <input
                     type="text"
                     placeholder="Введите код"
@@ -137,7 +139,7 @@ export function VerifyEmailForm({ initialEmail }: { initialEmail: string }) {
                     onChange={(e) => setCode(e.target.value)}
                     required
                     autoComplete="off"
-                    className="border p-3.5 rounded-lg w-full text-center tracking-[0.5em] font-bold text-2xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all bg-background"
+                    className={`${styles.input} text-center tracking-[0.5em] font-bold bg-background`}
                 />
 
                 {verifyError && (
@@ -149,7 +151,7 @@ export function VerifyEmailForm({ initialEmail }: { initialEmail: string }) {
                 <button
                     type="submit"
                     disabled={isVerifying || !code}
-                    className="w-full py-2.5 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary/90 disabled:opacity-50 transition-all shadow-sm"
+                    className={`${styles.button} bg-primary text-primary-foreground font-semibold disabled:opacity-50`}
                 >
                     {isVerifying ? "Проверка..." : "Подтвердить"}
                 </button>

@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, cardSurface } from "@/components/ui/card";
 import { paymentsApi } from "../api/payments.api";
 import type { Payment } from "../types/payment.types";
 
@@ -47,7 +47,7 @@ export async function PaymentsHistory() {
         ) : (
           <ul className="space-y-3">
             {payments.map((payment) => (
-              <li key={payment.id} className="rounded-2xl border bg-background p-4">
+              <li key={payment.id} className={`${cardSurface} p-4`}>
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                   <div>
                     <p className="font-medium">{payment.course_details.title}</p>

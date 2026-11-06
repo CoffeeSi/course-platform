@@ -1,6 +1,8 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { useState } from "react";
+import styles from "@/components/ui/styles/form.module.css";
+import type { SubmitEvent } from "react";
 import { RegisterPayload } from "@/features/auth/types/auth.types";
 import { useRouter } from "next/navigation";
 import { authApi } from "@/features/auth/api/auth.api";
@@ -11,7 +13,7 @@ export default function RegisterForm() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
-  const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
+  const onSubmit = async (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
@@ -42,14 +44,14 @@ export default function RegisterForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-4">
+    <form onSubmit={onSubmit} className={styles.form}>
       <label className="flex flex-col gap-2 text-sm font-medium">
         Электронная почта
         <input
           type="email"
           name="email"
           required
-          className="h-10 rounded-md border px-3"
+          className={styles.input}
         />
       </label>
 
@@ -58,7 +60,7 @@ export default function RegisterForm() {
         <input
           type="tel"
           name="phone"
-          className="h-10 rounded-md border px-3"
+          className={styles.input}
         />
       </label>
 
@@ -69,7 +71,7 @@ export default function RegisterForm() {
           name="password"
           minLength={8}
           required
-          className="h-10 rounded-md border px-3"
+          className={styles.input}
         />
       </label>
 
@@ -80,7 +82,7 @@ export default function RegisterForm() {
           name="confirmPassword"
           minLength={8}
           required
-          className="h-10 rounded-md border px-3"
+          className={styles.input}
         />
       </label>
 
@@ -92,8 +94,8 @@ export default function RegisterForm() {
         </div>
       )}
 
-      <Button type="submit" disabled={isLoading}>
-        {isLoading ? "Creating..." : "Create account"}
+      <Button type="submit" className={`${styles.button} hover:bg-primary`} disabled={isLoading}>
+        {isLoading ? "Создаём аккаунт…" : "Зарегистрироваться"}
       </Button>
     </form>
   );

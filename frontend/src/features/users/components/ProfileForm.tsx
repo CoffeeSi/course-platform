@@ -1,6 +1,8 @@
 'use client';
 
-import { useState, FormEvent } from "react";
+import { useState } from "react";
+import styles from "@/components/ui/styles/form.module.css";
+import type { SubmitEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { usersApi } from "@/features/users/api/users.api";
@@ -13,7 +15,7 @@ export function ProfileForm({ initialData }: { initialData: UserProfile["profile
 
   const router = useRouter();
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsPending(true);
     setIsSuccess(false);
@@ -40,13 +42,13 @@ export function ProfileForm({ initialData }: { initialData: UserProfile["profile
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+    <form onSubmit={handleSubmit} className={styles.form}>
       <label className="flex flex-col gap-2 text-sm font-medium">
         Имя
         <input
           name="first_name"
           defaultValue={initialData?.first_name ?? ""}
-          className="h-10 rounded-md border px-3"
+          className={styles.input}
         />
       </label>
 
@@ -55,7 +57,7 @@ export function ProfileForm({ initialData }: { initialData: UserProfile["profile
         <input
           name="last_name"
           defaultValue={initialData?.last_name ?? ""}
-          className="h-10 rounded-md border px-3"
+          className={styles.input}
         />
       </label>
 
@@ -64,15 +66,15 @@ export function ProfileForm({ initialData }: { initialData: UserProfile["profile
         <input
           name="avatar"
           defaultValue={initialData?.avatar ?? ""}
-          className="h-10 rounded-md border px-3"
+          className={styles.input}
         />
       </label>
 
       {isSuccess && <p className="text-sm text-green-600">Профиль успешно обновлен</p>}
       {isError && <p className="text-sm text-destructive">Не удалось обновить профиль</p>}
 
-      <Button type="submit" disabled={isPending}>
-        {isPending ? "Saving..." : "Save profile"}
+      <Button type="submit" className={`${styles.button} hover:bg-primary`} disabled={isPending}>
+        {isPending ? "Сохраняем…" : "Сохранить профиль"}
       </Button>
     </form>
   );

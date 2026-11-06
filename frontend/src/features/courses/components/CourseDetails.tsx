@@ -4,6 +4,7 @@ import { EnrollButton } from "./EnrollButton";
 import getCurrentUser from "@/features/auth/utils/getCurrentUser";
 import { cookies } from "next/headers";
 import Link from "next/link";
+import { cardSurface } from "@/components/ui/card";
 
 export default async function CourseDetails({ courseID, paymentError }: { courseID: number; paymentError?: string }) {
   const token = (await cookies()).get("access_token")?.value;
@@ -41,7 +42,7 @@ export default async function CourseDetails({ courseID, paymentError }: { course
         {course.modules.length === 0 ? <p>No modules yet.</p> : null}
         <ul className="flex flex-col gap-4">
           {course.modules.map((module) => (
-            <li key={module.id} className="rounded-md border p-4">
+            <li key={module.id} className={`${cardSurface} p-6`}>
               <h3 className="font-semibold">{module.order}. {module.title}</h3>
               <ul className="mt-3 flex flex-col gap-2 text-sm">
                 {(module.lessons ?? []).map((lesson) => (
