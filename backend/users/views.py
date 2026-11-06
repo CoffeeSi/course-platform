@@ -1,5 +1,6 @@
 import random
 
+from django.contrib.auth import logout
 from django.http import JsonResponse
 from django.middleware.csrf import get_token
 from django.utils import timezone
@@ -11,9 +12,9 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
-from config import settings
 from users.tasks import send_verification_email
 
+from .cookies import REFRESH_COOKIE_NAME, clear_auth_cookies, set_auth_cookies
 from .models import Profile, User, Verification
 from .serializers import (
     ResendVerificationSerializer,
@@ -21,16 +22,6 @@ from .serializers import (
     UserRegisterSerializer,
     VerificationSerializer,
 )
-
-ACCESS_COOKIE_NAME = "access_token"
-REFRESH_COOKIE_NAME = "refresh_token"
-
-COOKIE_KWARGS = {
-    "httponly": True,
-    "secure": not settings.DEBUG,
-    "samesite": "Lax",
-    "path": "/",
-}
 
 
 @never_cache
@@ -258,22 +249,7 @@ class CookieTokenObtainPairView(TokenObtainPairView):
         if response.status_code == 200:
             access = response.data.pop("access")
             refresh = response.data.pop("refresh")
-            response.set_cookie(
-                ACCESS_COOKIE_NAME,
-                access,
-                max_age=int(
-                    settings.SIMPLE_JWT["ACCESS_TOKEN_LIFETIME"].total_seconds()
-                ),
-                **COOKIE_KWARGS,
-            )
-            response.set_cookie(
-                REFRESH_COOKIE_NAME,
-                refresh,
-                max_age=int(
-                    settings.SIMPLE_JWT["REFRESH_TOKEN_LIFETIME"].total_seconds()
-                ),
-                **COOKIE_KWARGS,
-            )
+            set_auth_cookies(response, access, refresh)
             response.data = {"message": "Login successful"}
         return response
 
@@ -288,27 +264,17 @@ class CookieTokenRefreshView(TokenRefreshView):
         serializer.is_valid(raise_exception=True)
 
         response = Response({"message": "Token refreshed"})
-        response.set_cookie(
-            ACCESS_COOKIE_NAME,
+        set_auth_cookies(
+            response,
             serializer.validated_data["access"],
-            max_age=int(settings.SIMPLE_JWT["ACCESS_TOKEN_LIFETIME"].total_seconds()),
-            **COOKIE_KWARGS,
+            serializer.validated_data.get("refresh"),
         )
-        new_refresh = serializer.validated_data.get("refresh")
-        if new_refresh:
-            response.set_cookie(
-                REFRESH_COOKIE_NAME,
-                new_refresh,
-                max_age=int(
-                    settings.SIMPLE_JWT["REFRESH_TOKEN_LIFETIME"].total_seconds()
-                ),
-                **COOKIE_KWARGS,
-            )
         return response
 
 
 class LogoutView(views.APIView):
-    permission_classes = [IsAuthenticated]
+    authentication_classes = []
+    permission_classes = [AllowAny]
 
     @extend_schema(
         summary="Выход из системы",
@@ -318,6 +284,6 @@ class LogoutView(views.APIView):
     )
     def post(self, request):
         response = Response({"message": "Logged out"})
-        response.delete_cookie(ACCESS_COOKIE_NAME, path="/")
-        response.delete_cookie(REFRESH_COOKIE_NAME, path="/")
+        logout(request)
+        clear_auth_cookies(response)
         return response
