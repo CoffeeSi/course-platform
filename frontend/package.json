@@ -2,6 +2,7 @@
   "name": "frontend",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@12.15.0",
   "scripts": {
     "dev": "next dev -H 0.0.0.0",
     "build": "next build",
@@ -10,7 +11,7 @@
   },
   "dependencies": {
     "@tanstack/react-query": "^5.101.0",
-    "@videojs/react": "^10.0.0-beta.24",
+    "@videojs/react": "^10.3.0",
     "axios": "^1.18.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

@@ -9,10 +9,12 @@ export async function EnrollButton({
   courseId,
   price,
   isAuthorized,
+  isEnrolled,
 }: {
   courseId: number;
   price: string | number;
   isAuthorized?: boolean;
+  isEnrolled?: boolean;
 }) {
   const isFree = Number(price) === 0;
   const label = isFree ? "Записаться" : "Купить";
@@ -31,18 +33,21 @@ export async function EnrollButton({
     );
   }
 
-  const token = (await cookies()).get("access_token")?.value;
+  if (isEnrolled !== undefined) {
+    if (isEnrolled) return null;
+  } else {
+    const token = (await cookies()).get("access_token")?.value;
+    let status;
+    try {
+      status = await enrollmentsApi.fetchEnrollmentStatus(courseId, token);
+    } catch {
+      return (
+        <p className="text-sm text-destructive">Не удалось загрузить статус записи</p>
+      );
+    }
 
-  let status;
-  try {
-    status = await enrollmentsApi.fetchEnrollmentStatus(courseId, token);
-  } catch {
-    return (
-      <p className="text-sm text-destructive">Не удалось загрузить статус записи</p>
-    );
+    if (status?.is_enrolled) return null;
   }
-
-  if (status?.is_enrolled) return null;
 
   async function enroll() {
     "use server";

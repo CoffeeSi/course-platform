@@ -109,6 +109,12 @@ class IsEnrolledInCourseOrAdmin(permissions.BasePermission):
         if user_role == User.Role.ADMIN or request.user.is_staff:
             return True
 
+        if obj.module.course.instructor == request.user:
+            return True
+
+        if obj.module.course.price == 0:
+            return True
+
         if user_role == User.Role.STUDENT:
             return Enrollment.objects.filter(
                 student_id=request.user.id, course_id=obj.module.course_id

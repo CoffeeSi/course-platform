@@ -18,7 +18,7 @@ class ModuleInline(admin.TabularInline):
 class LessonInline(admin.TabularInline):
     model = Lesson
     extra = 1
-    fields = ("title", "is_free", "order")
+    fields = ("title", "order")
 
 
 @admin.register(Course)
@@ -56,10 +56,10 @@ class ModuleAdmin(admin.ModelAdmin):
 
 @admin.register(Lesson)
 class LessonAdmin(admin.ModelAdmin):
-    list_display = ("title", "get_course", "module", "is_free", "order", "created_at")
-    list_filter = ("is_free", "module__course", "module")
+    list_display = ("title", "get_course", "module", "order", "created_at")
+    list_filter = ("module__course", "module")
     search_fields = ("title", "module__title")
-    list_editable = ("is_free", "order")
+    list_editable = ("order",)
     raw_id_fields = ("module",)
 
     def get_course(self, obj):

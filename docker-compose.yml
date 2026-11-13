@@ -86,31 +86,31 @@ services:
     volumes:
       - django_static:/app/staticfiles
 
-  # celery_worker:
-  #   build: ./backend
-  #   command: uv run celery -A config worker -l info -P solo
-  #   restart: always
-  #   volumes:
-  #     - ./backend:/app
-  #     - /app/.venv
-  #   env_file:
-  #     - .env
-  #   environment:
-  #     - CELERY_BROKER_URL=redis://redis:6379/0
-  #   depends_on:
-  #     - redis
-  #     - backend
+  celery_worker:
+    build: ./backend
+    command: uv run celery -A config worker -l info -P solo
+    restart: always
+    volumes:
+      - ./backend:/app
+      - /app/.venv
+    env_file:
+      - .env
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+    depends_on:
+      - redis
+      - backend
 
-  # stripe-cli:
-  #   image: stripe/stripe-cli:latest
-  #   container_name: stripe-cli
-  #   command: >
-  #     listen 
-  #     --api-key ${STRIPE_SECRET_KEY} 
-  #     --forward-to http://backend:8000/api/v1/payments/webhooks/stripe/
-  #   depends_on:
-  #     - backend
-  #   restart: unless-stopped
+  stripe-cli:
+    image: stripe/stripe-cli:latest
+    container_name: stripe-cli
+    command: >
+      listen 
+      --api-key ${STRIPE_SECRET_KEY} 
+      --forward-to http://backend:8000/api/v1/payments/webhooks/stripe/
+    depends_on:
+      - backend
+    restart: unless-stopped
 
   frontend:
     build: ./frontend
