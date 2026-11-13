@@ -8,7 +8,7 @@ class CoursesConfig(AppConfig):
     def ready(self):
         from django.conf import settings
 
-        if getattr(settings, "USE_SEAWEEDFS", False):
+        if getattr(settings, "USE_RUSTFS", False):
             import logging
 
             import boto3

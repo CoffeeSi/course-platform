@@ -218,18 +218,18 @@ EMAIL_BACKEND = env.str(
     default="django.core.mail.backends.smtp.EmailBackend",
 )
 
-USE_SEAWEEDFS = env.bool("USE_SEAWEEDFS", default=True)
+USE_RUSTFS = env.bool("USE_RUSTFS", default=True)
 
-if USE_SEAWEEDFS:
-    AWS_ACCESS_KEY_ID = env.str("SEAWOODFS_ROOT_USER", default="admin")
-    AWS_SECRET_ACCESS_KEY = env.str("SEAWOODFS_ROOT_PASSWORD", default="password")
-    AWS_STORAGE_BUCKET_NAME = env.str("SEAWOODFS_BUCKET_NAME", default="course-videos")
-    AWS_S3_ENDPOINT_URL = env.str("SEAWOODFS_ENDPOINT", default="http://127.0.0.1:8333")
+if USE_RUSTFS:
+    AWS_ACCESS_KEY_ID = env.str("RUSTFS_ACCESS_KEY", default="admin")
+    AWS_SECRET_ACCESS_KEY = env.str("RUSTFS_SECRET_KEY", default="password")
+    AWS_STORAGE_BUCKET_NAME = env.str("RUSTFS_BUCKET_NAME", default="course-videos")
+    AWS_S3_ENDPOINT_URL = env.str("RUSTFS_ENDPOINT", default="http://127.0.0.1:9000")
     AWS_S3_PUBLIC_ENDPOINT_URL = env.str(
-        "AWS_S3_PUBLIC_ENDPOINT_URL", default="http://localhost:8333"
+        "RUSTFS_PUBLIC_ENDPOINT_URL", default="http://localhost:9000"
     )
 
-    AWS_S3_USE_SSL = env.bool("SEAWOODFS_STORAGE_USE_SSL", default=False)
+    AWS_S3_USE_SSL = env.bool("RUSTFS_STORAGE_USE_SSL", default=False)
     AWS_S3_VERIFY = False
 
     # Enable temporary signed URLs for private video access
