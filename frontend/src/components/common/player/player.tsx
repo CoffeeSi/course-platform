@@ -1,12 +1,12 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import '@videojs/react/video/skin.css';
-import { createPlayer, videoFeatures } from '@videojs/react';
-import { VideoSkin, Video } from '@videojs/react/video';
+import { createPlayer } from '@videojs/react';
+import { videoFeatures, VideoSkin, Video } from '@videojs/react/video';
 import client from '@/shared/api/client';
 
-const { Player } = createPlayer({ features: videoFeatures });
+const VJSPlayer = (createPlayer({ features: videoFeatures }) as any).Player as React.ComponentType<{ children: React.ReactNode }>;
 
 interface MyPlayerProps {
   videoKey: string;
@@ -62,7 +62,7 @@ export const VideoPlayer = ({ videoKey }: MyPlayerProps) => {
   if (!streamUrl) return <div className="text-muted-foreground animate-pulse p-4 text-center">Securing storage connection...</div>;
 
   return (
-    <Player key={playerKey}>
+    <VJSPlayer key={playerKey}>
       <VideoSkin>
         <Video
           src={streamUrl}
@@ -70,6 +70,6 @@ export const VideoPlayer = ({ videoKey }: MyPlayerProps) => {
           suppressHydrationWarning
         />
       </VideoSkin>
-    </Player>
+    </VJSPlayer>
   );
 };

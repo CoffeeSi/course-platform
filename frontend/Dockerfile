@@ -11,7 +11,7 @@ FROM dhi.io/node:24-alpine3.22-dev AS dependencies
 WORKDIR /app
 
 # Copy package-related files first to leverage Docker's caching mechanism
-COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* .npmrc* ./
+COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* pnpm-workspace.yaml* .npmrc* ./
 
 # Install project dependencies with frozen lockfile for reproducible builds
 RUN --mount=type=cache,target=/root/.npm \
@@ -22,7 +22,7 @@ RUN --mount=type=cache,target=/root/.npm \
   elif [ -f yarn.lock ]; then \
     corepack enable yarn && yarn install --frozen-lockfile --production=false; \
   elif [ -f pnpm-lock.yaml ]; then \
-    corepack enable pnpm && pnpm install --frozen-lockfile; \
+    corepack enable pnpm && pnpm install --frozen-lockfile --config.confirmModulesPurge=false; \
   else \
     echo "No lockfile found." && exit 1; \
   fi

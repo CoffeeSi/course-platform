@@ -110,9 +110,6 @@ class Lesson(models.Model):
         null=True,
         verbose_name="Видеофайл",
     )
-
-    is_free = models.BooleanField(default=False, verbose_name="Бесплатный")
-
     order = models.PositiveIntegerField(
         default=0,
         verbose_name="Порядок сортировки",
@@ -131,7 +128,7 @@ class Lesson(models.Model):
         ]
 
     def save(self, *args, **kwargs):
-        if self.pk is None and not self.order:
+        if not self.order:
             max_order = Lesson.objects.filter(module=self.module).aggregate(
                 Max("order")
             )["order__max"]

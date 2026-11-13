@@ -1,6 +1,5 @@
 from rest_framework import serializers
 
-from enrollments.models import Enrollment
 from users.models import User
 from users.serializers import UserSerializer
 
@@ -44,18 +43,14 @@ class ModuleShortSerializer(serializers.ModelSerializer):
 
 
 class LessonShortSerializer(serializers.ModelSerializer):
-    """Краткий урок для вложенности внутри модуля (без деталей модуля)"""
+    """Краткий урок для программы курса в модуле (без тяжелого контента/видео)"""
 
     class Meta:
         model = Lesson
         fields = [
             "id",
             "title",
-            "content_text",
-            "video_url",
-            "video_file",
             "order",
-            "is_free",
             "created_at",
         ]
 
@@ -115,7 +110,7 @@ class ModuleSerializer(serializers.ModelSerializer):
     Содержит информацию о модуле и список всех уроков в модуле.
     """
 
-    lessons = serializers.SerializerMethodField()
+    lessons = LessonShortSerializer(many=True, read_only=True)
     course_detail = CourseSerializer(source="course", read_only=True)
 
     class Meta:
@@ -131,31 +126,6 @@ class ModuleSerializer(serializers.ModelSerializer):
             "order": {"help_text": "Порядок сортировки в курсе"},
             "lessons": {"help_text": "Список всех уроков в модуле"},
         }
-
-    def get_lessons(self, obj):
-        request = self.context.get("request")
-        if getattr(request, "user", None) is None:
-            return LessonShortSerializer(obj.lessons.all(), many=True).data
-
-        user = request.user
-
-        if not user.is_authenticated:
-            free_lessons = obj.lessons.filter(is_free=True)
-            return LessonShortSerializer(free_lessons, many=True).data
-
-        if user.is_staff or user.role == User.Role.ADMIN:
-            return LessonShortSerializer(obj.lessons.all(), many=True).data
-
-        if obj.course.instructor_id == user.id:
-            return LessonShortSerializer(obj.lessons.all(), many=True).data
-
-        if Enrollment.objects.filter(
-            student_id=user.id, course_id=obj.course_id
-        ).exists():
-            return LessonShortSerializer(obj.lessons.all(), many=True).data
-
-        free_lessons = obj.lessons.filter(is_free=True)
-        return LessonShortSerializer(free_lessons, many=True).data
 
     def validate_course(self, value):
         request = self.context.get("request")
@@ -198,7 +168,6 @@ class LessonSerializer(serializers.ModelSerializer):
             "order",
             "next_lesson_id",
             "prev_lesson_id",
-            "is_free",
             "created_at",
         ]
         extra_kwargs = {
@@ -214,7 +183,6 @@ class LessonSerializer(serializers.ModelSerializer):
             "prev_lesson_id": {"help_text": "Идентификатор предыдущего урока"},
             "next_lesson_id": {"help_text": "Идентификатор следующего урока"},
             "order": {"help_text": "Порядок сортировки в модуле"},
-            "is_free": {"help_text": "Флаг бесплатного урока"},
             "created_at": {"help_text": "Дата создания урока"},
         }
 
