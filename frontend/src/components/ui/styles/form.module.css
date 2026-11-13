@@ -1,0 +1,39 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.control {
+  outline: none;
+  transition: border-color 218ms, box-shadow 218ms;
+}
+
+.control:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+.control:enabled:hover {
+  border-color: #9ca3af;
+  box-shadow: 0 2px 12px rgb(60 64 67 / 8%);
+}
+
+.input {
+  composes: control;
+  box-sizing: border-box;
+  height: 44px;
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 12px;
+  padding: 0 16px;
+  font-size: 14px;
+}
+
+.button {
+  composes: control;
+  height: 44px;
+  width: 100%;
+  border-radius: 12px;
+  padding: 0 16px;
+}
