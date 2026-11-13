@@ -24,15 +24,19 @@ services:
     ports:
       - ${REDIS_PORT}:6379
 
-  seaweedfs:
-    image: chrislusf/seaweedfs:latest
+  rustfs:
+    image: rustfs/rustfs:latest
     restart: always
     ports:
-      - "8333:8333"
-      - "9333:9333"
-    command: server -dir=/data -s3
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      RUSTFS_ACCESS_KEY: ${RUSTFS_ACCESS_KEY:-admin}
+      RUSTFS_SECRET_KEY: ${RUSTFS_SECRET_KEY:-password}
+      RUSTFS_CONSOLE_ENABLE: "true"
+      RUSTFS_CONSOLE_CORS_ALLOWED_ORIGINS: "*"
     volumes:
-      - seaweed_data:/data
+      - rustfs_data:/data
 
   backend:
     build: ./backend
@@ -59,14 +63,14 @@ services:
       EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD:-your_email_password}
       DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL:-Course Platform <someemail@gmail.com>}
       EMAIL_BACKEND: ${EMAIL_BACKEND:-django.core.mail.backends.smtp.EmailBackend}
-      USE_SEAWEEDFS: ${USE_SEAWEEDFS:-True}
-      SEAWEEDFS_ROOT_USER: ${SEAWOODFS_ROOT_USER:-admin}
-      SEAWEEDFS_ROOT_PASSWORD: ${SEAWOODFS_ROOT_PASSWORD:-password}
-      SEAWEEDFS_ENDPOINT: ${SEAWOODFS_ENDPOINT:-http://seaweedfs:8333}
-      SEAWEEDFS_PUBLIC_ENDPOINT_URL: ${SEAWOODFS_PUBLIC_ENDPOINT_URL:-http://localhost:8333}
-      AWS_S3_PUBLIC_ENDPOINT_URL: ${AWS_S3_PUBLIC_ENDPOINT_URL:-http://localhost:8333}
-      SEAWEEDFS_BUCKET_NAME: ${SEAWOODFS_BUCKET_NAME:-course-videos}
-      SEAWEEDFS_STORAGE_USE_SSL: ${SEAWOODFS_STORAGE_USE_SSL:-False}
+      USE_RUSTFS: ${USE_RUSTFS:-True}
+      RUSTFS_ACCESS_KEY: ${RUSTFS_ACCESS_KEY:-admin}
+      RUSTFS_SECRET_KEY: ${RUSTFS_SECRET_KEY:-password}
+      RUSTFS_ENDPOINT: ${RUSTFS_ENDPOINT:-http://rustfs:9000}
+      RUSTFS_PUBLIC_ENDPOINT_URL: ${RUSTFS_PUBLIC_ENDPOINT_URL:-http://localhost:9000}
+      AWS_S3_PUBLIC_ENDPOINT_URL: ${AWS_S3_PUBLIC_ENDPOINT_URL:-http://localhost:9000}
+      RUSTFS_BUCKET_NAME: ${RUSTFS_BUCKET_NAME:-course-videos}
+      RUSTFS_STORAGE_USE_SSL: ${RUSTFS_STORAGE_USE_SSL:-False}
     healthcheck:
       test:
         - CMD
@@ -80,10 +84,11 @@ services:
     depends_on:
       - postgres
       - redis
-      - seaweedfs
+      - rustfs
     ports:
       - "8000:8000"
     volumes:
+      - ./backend:/app
       - django_static:/app/staticfiles
 
   celery_worker:
@@ -142,5 +147,5 @@ services:
 
 volumes:
   postgres_data:
-  seaweed_data:
+  rustfs_data:
   django_static:
