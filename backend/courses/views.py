@@ -1,22 +1,24 @@
-from rest_framework import viewsets, status
-from rest_framework.response import Response
-from drf_spectacular.utils import extend_schema
 from django.db import models
+from drf_spectacular.utils import extend_schema
+from rest_framework import status, viewsets
+from rest_framework.response import Response
+
 from users.models import User
-from .models import Category, Course, Module, Lesson
-from .serializers import (
-    CategorySerializer,
-    CourseSerializer,
-    CourseDetailSerializer,
-    ModuleSerializer,
-    LessonSerializer,
-)
+
+from .models import Category, Course, Lesson, Module
 from .permissions import (
     IsAdminOrReadOnly,
     IsCourseInstructorOrReadOnly,
     IsEnrolledInCourseOrAdmin,
-    IsModuleInstructorOrReadOnly,
     IsLessonInstructorOrReadOnly,
+    IsModuleInstructorOrReadOnly,
+)
+from .serializers import (
+    CategorySerializer,
+    CourseDetailSerializer,
+    CourseSerializer,
+    LessonSerializer,
+    ModuleSerializer,
 )
 
 
@@ -252,14 +254,13 @@ class ModuleViewSet(viewsets.ModelViewSet):
         is_admin = user.is_authenticated and (
             user.is_staff or user.role == User.Role.ADMIN
         )
-        if not is_admin:
-            if "course" not in request.query_params:
-                return Response(
-                    {
-                        "detail": "Необходимо указать параметр запроса 'course' для получения списка модулей."
-                    },
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
+        if not is_admin and "course" not in request.query_params:
+            return Response(
+                {
+                    "detail": "Необходимо указать параметр запроса 'course' для получения списка модулей."
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         return super().list(request, *args, **kwargs)
 
     @extend_schema(
@@ -358,14 +359,13 @@ class LessonViewSet(viewsets.ModelViewSet):
         is_admin = user.is_authenticated and (
             user.is_staff or user.role == User.Role.ADMIN
         )
-        if not is_admin:
-            if "module" not in request.query_params:
-                return Response(
-                    {
-                        "detail": "Необходимо указать параметр запроса 'module' для получения списка уроков."
-                    },
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
+        if not is_admin and "module" not in request.query_params:
+            return Response(
+                {
+                    "detail": "Необходимо указать параметр запроса 'module' для получения списка уроков."
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         return super().list(request, *args, **kwargs)
 
     @extend_schema(

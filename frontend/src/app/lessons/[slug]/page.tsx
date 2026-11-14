@@ -7,9 +7,27 @@ import { ApiError } from "@/shared/api/client";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { Metadata } from "next";
 
 interface Props {
   params: Promise<{ slug: string }>;
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { slug } = await params;
+  const lessonID = Number(slug);
+  const token = (await cookies()).get("access_token")?.value;
+
+  try {
+    const lesson = await lessonsApi.fetchLesson(lessonID, token);
+    return {
+      title: lesson.title,
+    };
+  } catch {
+    return {
+      title: "Урок",
+    };
+  }
 }
 
 export default async function LessonPage({ params }: Props) {

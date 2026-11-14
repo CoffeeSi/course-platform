@@ -1,6 +1,6 @@
 import Link from "next/link";
 import getCurrentUser from "@/features/auth/utils/getCurrentUser";
-import {LogoutButton} from "@/features/auth/components/LogoutButton";
+import { LogoutButton } from "@/features/auth/components/LogoutButton";
 
 export default async function Header() {
 
@@ -19,11 +19,11 @@ export default async function Header() {
               {user.is_email_verified ? (
                 <>
                   <Link href="/my-courses" className="hover:text-primary transition-colors">Мои курсы</Link>
-                  <Link href="/profile" className="hover:text-primary transition-colors">{user.email}</Link>
+                  <Link href="/profile" className="hover:text-primary transition-colors">{user.profile?.first_name || user.email}</Link>
                 </>
               ) : (
                 <span className="text-destructive bg-destructive/10 px-2 py-1 rounded text-xs">
-                  {user.email} (Не подтвержден)
+                  {user.profile?.first_name || user.email} (Не подтвержден)
                 </span>
               )}
               <LogoutButton />

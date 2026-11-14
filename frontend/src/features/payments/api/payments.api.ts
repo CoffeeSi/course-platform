@@ -73,7 +73,6 @@ export const paymentsApi = {
   fetchPayments: (token?: string) => {
     return client.get<PaginatedResponse<Payment>>("/api/v1/payments/", {
       token,
-      next: { revalidate: 0 },
     });
   },
   createCoursePayment: async (courseId: number, token?: string) => {
@@ -84,7 +83,6 @@ export const paymentsApi = {
 
     const response = await client.post<CreateCoursePaymentResponse>("/api/v1/payments/create/", payload, {
       token,
-      next: { revalidate: 0 },
     });
 
     return {

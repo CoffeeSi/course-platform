@@ -3,9 +3,21 @@ import { ProfileForm } from "@/features/users/components/ProfileForm";
 import getCurrentUser from "@/features/auth/utils/getCurrentUser";
 import { PaymentsHistory } from "@/features/payments/components/PaymentsHistory";
 import { Card, CardContent, cardSurface } from "@/components/ui/card";
+import { Metadata } from "next";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const user = await getCurrentUser();
+  const name = [user?.profile?.first_name, user?.profile?.last_name]
+    .filter(Boolean)
+    .join(" ");
+
+  return {
+    title: name ? `${name} | Профиль` : "Профиль",
+  };
+}
 
 export default async function ProfilePage() {
-  const user = await getCurrentUser()
+  const user = await getCurrentUser();
 
   if (!user) {
     redirect("/login");

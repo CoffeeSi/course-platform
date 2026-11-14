@@ -2,6 +2,11 @@ import { redirect } from "next/navigation";
 import getCurrentUser from "@/features/auth/utils/getCurrentUser";
 import { LoginForm } from "@/features/auth/components/LoginForm";
 import GoogleLoginButton from "../../features/auth/components/GoogleLoginButton/GoogleLoginButton";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Вход",
+};
 
 export default async function LoginPage() {
   const user = await getCurrentUser();

@@ -2,6 +2,11 @@ import { cookies } from "next/headers";
 import { EnrollmentCard } from "@/features/enrollments/components/EnrollmentCard";
 import { enrollmentsApi } from "@/features/enrollments/api/enrollmets.api";
 import { Enrollment } from "@/features/enrollments/types/enrollment.type";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Мои курсы",
+};
 
 export default async function MyCoursesPage() {
   const token = (await cookies()).get("access_token")?.value;

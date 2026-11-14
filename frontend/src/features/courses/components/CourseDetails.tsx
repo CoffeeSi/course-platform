@@ -6,6 +6,7 @@ import getCurrentUser from "@/features/auth/utils/getCurrentUser";
 import { cookies } from "next/headers";
 import Link from "next/link";
 import { Lock } from "lucide-react";
+import { cardSurface } from "@/components/ui/card";
 
 export default async function CourseDetails({ courseID, paymentError }: { courseID: number; paymentError?: string }) {
   const token = (await cookies()).get("access_token")?.value;
@@ -68,9 +69,8 @@ export default async function CourseDetails({ courseID, paymentError }: { course
                 {(module.lessons ?? []).map((lesson) => (
                   <li
                     key={lesson.id}
-                    className={`rounded-md px-3 py-2 flex items-center justify-between ${
-                      isEnrolled ? "bg-muted" : "bg-muted/50 text-muted-foreground"
-                    }`}
+                    className={`rounded-md px-3 py-2 flex items-center justify-between ${isEnrolled ? "bg-muted" : "bg-muted/50 text-muted-foreground"
+                      }`}
                   >
                     {isEnrolled ? (
                       <Link
