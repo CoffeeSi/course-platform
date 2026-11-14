@@ -1,4 +1,9 @@
 import PaymentStatusHandler from "@/features/payments/components/PaymentStatusHandler";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Оплата прошла успешно",
+};
 
 export default async function PaymentSuccessPage({
   searchParams,

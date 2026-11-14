@@ -1,6 +1,11 @@
 import { redirect } from "next/navigation";
 import getCurrentUser from "@/features/auth/utils/getCurrentUser";
 import { VerifyEmailForm } from "@/features/auth/components/VerifyEmailForm";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Подтверждение электронной почты",
+};
 
 export default async function VerifyEmailPage({
   searchParams,
@@ -15,6 +20,6 @@ export default async function VerifyEmailPage({
   const { email } = await searchParams;
 
   return (
-      <VerifyEmailForm initialEmail={email || user.email} />
+    <VerifyEmailForm initialEmail={email || user.email} />
   );
 }

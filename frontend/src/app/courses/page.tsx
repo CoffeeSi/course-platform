@@ -1,4 +1,9 @@
 import CourseList from "@/features/courses/components/CourseList";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Курсы",
+};
 
 export default async function CoursesPage() {
   return (
